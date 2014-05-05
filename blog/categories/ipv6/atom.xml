@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Ipv6 | The Sheinburger]]></title>
   <link href="http://msheiny.github.io/blog/categories/ipv6/atom.xml" rel="self"/>
   <link href="http://msheiny.github.io/"/>
-  <updated>2014-05-04T20:04:36-04:00</updated>
+  <updated>2014-05-04T21:19:02-04:00</updated>
   <id>http://msheiny.github.io/</id>
   <author>
     <name><![CDATA[Mike Sheinberg]]></name>
@@ -18,9 +18,11 @@
     <link href="http://msheiny.github.io/blog/2014/03/17/mikrotik-and-me/"/>
     <updated>2014-03-17T17:11:24-04:00</updated>
     <id>http://msheiny.github.io/blog/2014/03/17/mikrotik-and-me</id>
-    <content type="html"><![CDATA[<h1>Mikrotik</h1>
+    <content type="html"><![CDATA[<p><img class="left" src="/images/mikrotik_rtrb_750.jpg" width="400"></p>
 
-<p>This company out of Latvia produces their own brand of hardware called Routerboard that runs their network OS based off the Linux kernel called RouterOS. I needed a cheap but feature-filled home router and ended up picking up the RB750GL off Amazon. I can’t speak to performance or stability yet but so far I’m very happy with the extensibility and feature-set of RouterOS. I’ve always run dd-wrt in the past but have been turned off by the lack of documentation and the hoops you have to jump through to do more advanced tasks outside the web interface.
+<p>So I stumbled across a company out of Latvia that produces a line of hardware routers
+and manages their own Linux-based network operating system. The hardware is called
+<code>Routerboard</code> and the operating system is <code>RouterOS</code>. I needed a cheap but feature-filled home router and ended up picking up the RB750GL off Amazon. I can’t speak to performance or stability yet but so far I’m very happy with the extensibility and feature-set of RouterOS. I’ve always run dd-wrt in the past but have been turned off by the lack of documentation and the hoops you have to jump through to do more advanced tasks outside the web interface.
 ssh logins</p>
 
 <h2>SSH key logins</h2>

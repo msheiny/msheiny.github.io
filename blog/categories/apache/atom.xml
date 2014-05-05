@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Apache | The Sheinburger]]></title>
   <link href="http://msheiny.github.io/blog/categories/apache/atom.xml" rel="self"/>
   <link href="http://msheiny.github.io/"/>
-  <updated>2014-05-04T20:04:36-04:00</updated>
+  <updated>2014-05-04T21:19:02-04:00</updated>
   <id>http://msheiny.github.io/</id>
   <author>
     <name><![CDATA[Mike Sheinberg]]></name>
@@ -18,7 +18,9 @@
     <link href="http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes/"/>
     <updated>2014-05-04T17:20:04-04:00</updated>
     <id>http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes</id>
-    <content type="html"><![CDATA[<p>Check out my primer chef document for how to initially configure your chef test environment with vagrant. This document assumes you are starting from there.</p>
+    <content type="html"><![CDATA[<p><img class="center" src="/images/recipe_book.jpg"></p>
+
+<p>Check out my primer chef document for how to initially configure your chef test environment with vagrant. This document assumes you are starting from there.</p>
 
 <h1>Apache Tutorial Cookbook</h1>
 
@@ -143,9 +145,12 @@ $ knife ssh "name:chefclient" -x vagrant -P vagrant "sudo chef-client"
 
 <h1>References</h1>
 
-<p><a href="http://docs.opscode.com/chef/resources.html">Chef Resources/Providers Reference</a>
-<a href="https://learnchef.opscode.com/tutorials/create-your-first-cookbook/">Chef Tutorial</a>
-<a href="http://docs.opscode.com/essentials_search.html">Chef Query</a></p>
+<ul>
+<li><a href="http://docs.opscode.com/chef/resources.html">Chef Resources/Providers Reference</a></li>
+<li><a href="https://learnchef.opscode.com/tutorials/create-your-first-cookbook/">Chef Tutorial</a></li>
+<li><a href="http://docs.opscode.com/essentials_search.html">Chef Query</a></li>
+</ul>
+
 ]]></content>
   </entry>
   
