@@ -6,9 +6,11 @@ comments: false
 categories: [mikrotik, networking, router, ipv6]
 ---
 
-# Mikrotik #
+{% img left /images/mikrotik_rtrb_750.jpg 400 %}
 
-This company out of Latvia produces their own brand of hardware called Routerboard that runs their network OS based off the Linux kernel called RouterOS. I needed a cheap but feature-filled home router and ended up picking up the RB750GL off Amazon. I can’t speak to performance or stability yet but so far I’m very happy with the extensibility and feature-set of RouterOS. I’ve always run dd-wrt in the past but have been turned off by the lack of documentation and the hoops you have to jump through to do more advanced tasks outside the web interface.
+So I stumbled across a company out of Latvia that produces a line of hardware routers
+and manages their own Linux-based network operating system. The hardware is called
+`Routerboard` and the operating system is `RouterOS`. I needed a cheap but feature-filled home router and ended up picking up the RB750GL off Amazon. I can’t speak to performance or stability yet but so far I’m very happy with the extensibility and feature-set of RouterOS. I’ve always run dd-wrt in the past but have been turned off by the lack of documentation and the hoops you have to jump through to do more advanced tasks outside the web interface.
 ssh logins
 
 ## SSH key logins ###
