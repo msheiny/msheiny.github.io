@@ -5,6 +5,9 @@ date: 2014-05-04 17:20:04 -0400
 comments: false
 categories: [chef, recipe, apache, knife]
 ---
+
+{% img center /images/recipe_book.jpg %}
+
 Check out my primer chef document for how to initially configure your chef test environment with vagrant. This document assumes you are starting from there.
 
 # Apache Tutorial Cookbook #
@@ -126,6 +129,6 @@ $ knife ssh "name:chefclient" -x vagrant -P vagrant "sudo chef-client"
 
 
 # References #
-[Chef Resources/Providers Reference](http://docs.opscode.com/chef/resources.html)
-[Chef Tutorial](https://learnchef.opscode.com/tutorials/create-your-first-cookbook/)
-[Chef Query](http://docs.opscode.com/essentials_search.html)
+* [Chef Resources/Providers Reference](http://docs.opscode.com/chef/resources.html)
+* [Chef Tutorial](https://learnchef.opscode.com/tutorials/create-your-first-cookbook/)
+* [Chef Query](http://docs.opscode.com/essentials_search.html)
