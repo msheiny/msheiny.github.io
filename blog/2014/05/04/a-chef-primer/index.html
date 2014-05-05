@@ -1,0 +1,464 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>A Chef Primer - The Sheinburger</title>
+  <meta name="author" content="Mike Sheinberg">
+
+  
+  <meta name="description" content="Chef Primer Vagrant My focus was to learn about Chef while using Vagrant for easy machine management. I&rsquo;m pretty familiar with the basics of &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://msheiny.github.io/blog/2014/05/04/a-chef-primer">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="The Sheinburger" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Gloria+Hallelujah' rel='stylesheet' type='text/css'>
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">The Sheinburger</a></h1>
+  
+    <h2>Self-serving content since 2014</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:msheiny.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">A Chef Primer</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-04T17:19:40-04:00" pubdate data-updated="true">May 4<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h2>Chef Primer</h2>
+
+<h3>Vagrant</h3>
+
+<p>My focus was to learn about Chef while using Vagrant for easy machine management. I&rsquo;m pretty familiar with the basics of vagrant already but there were two extras I needed for this project:
+1. Quick snapshoting capabilities
+2. Multi-machine setup for a Chef server and node</p>
+
+<p>For 1. turns out you need a plugin for that. There are a few out there but I went with
+<a href="https://github.com/dergachev/vagrant-vbox-snapshot">vagrant-vbox-snapshot</a>.</p>
+
+<p>Snapshot plugin installation:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>vagrant plugin install vagrant-vbox-snapshot</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The base commands I care about are:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>vagrant snapshot take &lt;machine_name&gt; $snapshotname
+</span><span class='line'>vagrant snapshot back &lt;machine_name&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://docs.vagrantup.com/v2/multi-machine/">Multi-machine</a> mode was fairly straightforward to configure. Here are the relevant pieces from my <code>Vagrantfile</code>:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Vagrant.configure("2") do |config|
+</span><span class='line'>
+</span><span class='line'>    config.vm.define "chef-server", primary: true do |chefserver|
+</span><span class='line'>        chefserver.vm.network :private_network, ip: "192.168.50.100"
+</span><span class='line'>        chefserver.vm.box = "precise64"
+</span><span class='line'>    end
+</span><span class='line'>
+</span><span class='line'>    config.vm.define "chef-node" do |chefnode|
+</span><span class='line'>        chefnode.vm.network :private_network, ip: "192.168.50.10"
+</span><span class='line'>        chefnode.vm.box = "precise64"
+</span><span class='line'>    end
+</span><span class='line'>
+</span><span class='line'>    end
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To jump between these two boxes you&rsquo;ll now need to specify the machine name. I
+configured the chef server as the default machine with <code>primary: true</code> but you&rsquo;ll need
+to refer to <code>chef-node</code> by name in your vagrant commands. For example, you can do
+<code>vagrant ssh chef-node</code>.</p>
+
+<h3>Chef Notes</h3>
+
+<p>Chef key terms:</p>
+
+<ul>
+<li><code>server</code> &ndash; stores infrastructure pieces</li>
+<li><code>workstation</code> &ndash; where you interact with chef server</li>
+<li><code>nodes</code> &ndash; a node in your infrastructure</li>
+<li><code>resources</code> &ndash; items to be manipulated (directories, files, etc.)
+
+<ul>
+<li>Represents a piece of the system and state. Such as a package to be installed, service to be running, file to be generated, user to be managed, etc.</li>
+</ul>
+</li>
+<li><code>recipe</code> &ndash; configuration files that describe resources and their desired state. the &ldquo;work-horse&rdquo; of chef</li>
+<li><code>cookbook</code> &ndash; hold recipes, templates, files, and custom resources.</li>
+<li><code>organizations</code> &ndash; enterprise chef independent tenants</li>
+<li><code>environments</code> &ndash; start with a single environment, can tag different life-stages and contain different data attributes.</li>
+<li><code>roles</code> &ndash; represent types of servers. roles define policies.</li>
+<li><code>run list</code> &ndash; list of chef configuration files that should be applied</li>
+<li><code>nodes</code> &ndash;  represent the machines to be managed. can have 0+ roles. belong to one environment and one organization</li>
+</ul>
+
+
+<p><code>chef-client</code>
+* Runs on each node
+* gathers current system config and
+* pulls down policy from chef server and enforce the policy on node</p>
+
+<h4>High-level execution steps</h4>
+
+<p>How Chef brings a machine in-line with policy:
+1. Chef client periodically polls chef server to determine what policies should be running
+2. The chef server figures that out and provides the client with a <code>run list</code>
+3. The chef-client looks at each recipe in the <code>run list</code> and determines if it is in line with that policy.</p>
+
+<h3>Chef-server Install</h3>
+
+<ol>
+<li>Download system package from chef install site</li>
+<li>Depending on your platform, you&rsquo;ll probably utilize &lsquo;rpm&rsquo; or &lsquo;dpkg&rsquo; to install that</li>
+<li>Ensure that DNS is properly configured for the server, or fake it by editing the <code>/etc/hosts</code> file</li>
+<li>run <code>sudo chef-server-ctl reconfigure</code> which kicks off what essentially looks like a chef cookbook to build the chef server</li>
+<li>You&rsquo;ll now have access to a chef web front-end on the server on standard web ports</li>
+<li>You can login with admin / p@ssw0rd1</li>
+</ol>
+
+
+<h3>Chef workstation Install</h3>
+
+<p>This is the computer(s) where you will manage the chef cookbooks and recipes. You should always be working from within your chef-repo (see further down).</p>
+
+<h4>Quick install method</h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>curl -L https://www.opscode.com/chef/install.sh | sudo bash
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This includes:
+* ruby
+* knife
+* chef-client
+* ohai</p>
+
+<p>You can also utilize ruby&rsquo;s gem installer with:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo gem install chef
+</span><span class='line'><span class="c">#or </span>
+</span><span class='line'>gem install --user-install chef
+</span><span class='line'><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;~/.gem/ruby/1.9.1/bin/:$PATH&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Chef-repo</h4>
+
+<p>To set-up a propery formatted chef repo, start from <a href="https://github.com/opscode/chef-repo.git.">https://github.com/opscode/chef-repo.git.</a> You&rsquo;ll need to pull down a template repository and then link your repository to our chef server.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>git clone https://github.com/opscode/chef-repo.git
+</span><span class='line'>mkdir chef-repo/.chef
+</span><span class='line'>touch chef-repo/.chef/chef-validator.pem
+</span><span class='line'>touch chef-repo/.chef/admin.pem
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Next, you&rsquo;ll need to pull in the certificates from the server. Log back into the web interface. Click <code>Clients</code> tab, then Chef-validator&rsquo;s <code>edit</code>, and regenerate the <code>Private key</code>. Copy the private key text from that page into the <code>chef-validator.pem</code> file we just created earlier. Do the same thing for the admin users, start with the <code>Users</code> tab and then dump the admin user&rsquo;s private key into the <code>admin.pem</code> file we created earlier.</p>
+
+<h4>Knife</h4>
+
+<p>knife is one of the primary command-line tools for managing chef instances. In order to bootstrap our knife configuration, you&rsquo;ll need to run the knife initial command:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>msheiny:~/git/chef-repo<span class="o">]</span> ± knife configure -i
+</span><span class='line'>WARNING: No knife configuration file found
+</span><span class='line'>Where should I put the config file? <span class="o">[</span>/home/msheiny/.chef/knife.rb<span class="o">]</span> .chef/knife.rb
+</span><span class='line'>Please enter the chef server URL: <span class="o">[</span>https://sheiny-desktop.sheiny.com:443<span class="o">]</span> https://chefserver
+</span><span class='line'>Please enter a name <span class="k">for </span>the new user: <span class="o">[</span>msheiny<span class="o">]</span>
+</span><span class='line'>Please enter the existing admin name: <span class="o">[</span>admin<span class="o">]</span>
+</span><span class='line'>Please enter the location of the existing admin<span class="err">&#39;</span>s private key: <span class="o">[</span>/etc/chef-server/admin.pem<span class="o">]</span> .chef/admin.pem
+</span><span class='line'>Please enter the validation clientname: <span class="o">[</span>chef-validator<span class="o">]</span>
+</span><span class='line'>Please enter the location of the validation key: <span class="o">[</span>/etc/chef-server/chef-validator.pem<span class="o">]</span> .chef/chef-validator.pem
+</span><span class='line'>Please enter the path to a chef repository <span class="o">(</span>or leave blank<span class="o">)</span>: /home/msheiny/git/chef-repo
+</span><span class='line'>Creating initial API user...
+</span><span class='line'>Please enter a password <span class="k">for </span>the new user:
+</span><span class='line'>Created user<span class="o">[</span>msheiny<span class="o">]</span>
+</span><span class='line'>Configuration file written to /home/msheiny/git/chef-repo/.chef/knife.rb
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can commit the repository at this time if you want. Just be weary of ensuring that the *pem files do not get commited or you might want to exclude the entire <code>.chef</code> directory altogether.</p>
+
+<p>Test to make sure everything is working correctly by running &ndash; <code>knife user list</code></p>
+
+<h4>Chef client Install</h4>
+
+<p>We can bootstrap a chef client into our instance with help from knife!</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>msheiny:~/git/chef-repo<span class="o">]</span> ± knife bootstrap chefclient.sheiny.com -x vagrant -P vagrant -N chefclient --sudo
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The third argument is the fqdn of the node, <code>-x</code> and <code>-P</code> are the username/password, and <code>-N</code> is the name we want to refer to our new client by.</p>
+
+<p>After that is done we can confirm with <code>client list</code> and we should see <code>chefclient</code> as part of the list:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>msheiny:~/git/chef-repo<span class="o">]</span> ± knife client list
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Resources</h2>
+
+<ul>
+<li><a href="http://www.getchef.com/chef/install/">Chef Install Site</a></li>
+<li><a href="https://www.digitalocean.com/community/articles/how-to-install-a-chef-server-workstation-and-client-on-ubuntu-vps-instances">Third-party Chef Install Tutorial</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mike Sheinberg</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-04T17:19:40-04:00" pubdate data-updated="true">May 4<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/vagrant/'>vagrant</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://msheiny.github.io/blog/2014/05/04/a-chef-primer/" data-via="" data-counturl="http://msheiny.github.io/blog/2014/05/04/a-chef-primer/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/03/17/mikrotik-and-me/" title="Previous Post: Mikrotik and Me">&laquo; Mikrotik and Me</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/05/04/chef-getting-started-with-recipes/" title="Next Post: Chef - Getting started with recipes">Chef - Getting started with recipes &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/chef-getting-started-with-recipes/">Chef - Getting Started With Recipes</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/a-chef-primer/">A Chef Primer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/17/mikrotik-and-me/">Mikrotik and Me</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/06/freeradius-and-google-pam/">Freeradius and Google Authenticator</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/msheiny">@msheiny</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'msheiny',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Mike Sheinberg -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

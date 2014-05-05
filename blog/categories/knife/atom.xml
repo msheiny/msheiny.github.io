@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Knife | The Sheinburger]]></title>
+  <link href="http://msheiny.github.io/blog/categories/knife/atom.xml" rel="self"/>
+  <link href="http://msheiny.github.io/"/>
+  <updated>2014-05-04T20:04:36-04:00</updated>
+  <id>http://msheiny.github.io/</id>
+  <author>
+    <name><![CDATA[Mike Sheinberg]]></name>
+    <email><![CDATA[m.sheiny@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Chef - Getting Started With Recipes]]></title>
+    <link href="http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes/"/>
+    <updated>2014-05-04T17:20:04-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes</id>
+    <content type="html"><![CDATA[<p>Check out my primer chef document for how to initially configure your chef test environment with vagrant. This document assumes you are starting from there.</p>
+
+<h1>Apache Tutorial Cookbook</h1>
+
+<p>These are my expanded notes from one of the official <a href="https://learnchef.opscode.com/tutorials/create-your-first-cookbook/">docs</a>. Before we proceed, let&rsquo;s take a quick look at the default <a href="https://github.com/opscode/chef-repo">chef-repo</a> tree:</p>
+
+<p><code>
+chef-repo
+├── .chef
+├── certificates
+├── config
+├── cookbooks
+├── data_bags
+├── environments
+└── roles
+</code></p>
+
+<p>When you are inside that directory and have already configured your knife config file, you can start a cookbook with:</p>
+
+<p><code>
+knife cookbook create apache_tutorial
+</code></p>
+
+<p>Let&rsquo;s see how this changes our workspace:</p>
+
+<p>```
+chef-repo
+└── cookbooks</p>
+
+<pre><code>    └── apache_tutorial
+        ├── attributes
+        ├── CHANGELOG.md
+        ├── definitions
+        ├── files
+        │   └── default
+        ├── libraries
+        ├── metadata.rb
+        ├── providers
+        ├── README.md
+        ├── recipes
+        │   └── default.rb
+        ├── resources
+        └── templates
+            └── default
+</code></pre>
+
+<p>```</p>
+
+<p>Make the following modifications:</p>
+
+<p><code>recipes/default.rb</code>:
+```
+package &ldquo;apache2&rdquo; do
+  action :install
+end</p>
+
+<p>service &ldquo;apache2&rdquo; do
+  action [ :enable, :start ]
+end</p>
+
+<p>cookbook_file &ldquo;/var/www/index.html&rdquo; do
+  source &ldquo;index.html&rdquo;
+  mode &ldquo;0644&rdquo;
+end
+```</p>
+
+<p><code>files/default/index.html</code>:
+<code>
+&lt;html&gt;
+&lt;body&gt;
+  &lt;h1&gt;Hello, world!&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></p>
+
+<p>Upload that recipe to the chef server:</p>
+
+<p><code>
+$ knife cookbook upload apache_tutorial
+</code></p>
+
+<h1>Run List</h1>
+
+<p>Now we need to add that recipe to our node&rsquo;s <code>run list</code>. To verify the run list of a node:</p>
+
+<p><code>
+$ knife node show chefclient
+Node Name:   chefclient
+Environment: _default
+FQDN:        ChefClient
+IP:          10.0.2.15
+Run List:    
+Roles:       
+Recipes:     
+Platform:    ubuntu 12.04
+Tags:
+</code></p>
+
+<p>Let&rsquo;s add our apache recipe to that node&rsquo;s runlist and confirm:</p>
+
+<p>```bash
+$ knife node run_list add chefclient apache_tutorial
+chefclient:
+  run_list: recipe[apache_tutorial]</p>
+
+<p>$ knife node show chefclient
+Node Name:   chefclient
+Environment: _default
+FQDN:        ChefClient
+IP:          10.0.2.15
+Run List:    recipe[apache_tutorial]
+Roles:     <br/>
+Recipes:   <br/>
+Platform:    ubuntu 12.04
+Tags:
+```</p>
+
+<p>To force our chefclient to run this recipe and check into our chef server:</p>
+
+<p><code>
+$ knife ssh "name:chefclient" -x vagrant -P vagrant "sudo chef-client"
+</code></p>
+
+<h1>References</h1>
+
+<p><a href="http://docs.opscode.com/chef/resources.html">Chef Resources/Providers Reference</a>
+<a href="https://learnchef.opscode.com/tutorials/create-your-first-cookbook/">Chef Tutorial</a>
+<a href="http://docs.opscode.com/essentials_search.html">Chef Query</a></p>
+]]></content>
+  </entry>
+  
+</feed>
