@@ -5,7 +5,8 @@ date: 2014-05-04 17:19:40 -0400
 comments: false
 categories: [chef, vagrant]
 ---
-## Chef Primer ##
+
+{% img center /images/chef_veggies.jpg %}
 
 ### Vagrant ###
 My focus was to learn about Chef while using Vagrant for easy machine management. I'm pretty familiar with the basics of vagrant already but there were two extras I needed for this project:
