@@ -9,7 +9,7 @@
   <meta name="author" content="Mike Sheinberg">
 
   
-  <meta name="description" content="Check out my primer chef document for how to initially configure your chef test environment with vagrant. This document assumes you are starting &hellip;">
+  <meta name="description" content="Installation Following directions from the Jenkins site, these are my notes to configuring a base Jenkins setup on Ubuntu 12.04. Let&rsquo;s first &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +66,173 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/05/jenkins-primer/">Jenkins Primer</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-05T19:05:57-04:00" pubdate data-updated="true">May 5<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>Installation</h1>
+
+<p>Following directions from the <a href="https://wiki.jenkins-ci.org/display/JENKINS/Installing+Jenkins+on+Ubuntu">Jenkins</a> site, these are my notes to configuring a base Jenkins setup on Ubuntu 12.04. Let&rsquo;s first start by adding the jenkins repository, refreshing the apt repository listing, installing, and
+starting up:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -
+</span><span class='line'>sudo sh -c <span class="s1">&#39;echo deb http://pkg.jenkins-ci.org/debian binary/ &gt; /etc/apt/sources.list.d/jenkins.list&#39;</span>
+</span><span class='line'>sudo apt-get update
+</span><span class='line'>sudo apt-get install jenkins
+</span><span class='line'>sudo service jenkins start
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>By default, you&rsquo;ll be able to reach the jenkins server over HTTP on port 8080. Here is the screen you are greeted with:
+<img class="center" src="/images/jenkins-install1.png"></p>
+
+<p>Our jekins configuration files live at <code>/var/lib/jenkins</code> which happens to be the home directory for our new <code>jenkins</code> user. Here is a default directory listing upon installation:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>jenkins@precise64:~<span class="nv">$ </span>tree -d -L 2
+</span><span class='line'>.
+</span><span class='line'>|-- <span class="nb">jobs</span>
+</span><span class='line'>|-- plugins
+</span><span class='line'>|   |-- ant
+</span><span class='line'>|   |-- antisamy-markup-formatter
+</span><span class='line'>|   |-- credentials
+</span><span class='line'>|   |-- cvs
+</span><span class='line'>|   |-- external-monitor-job
+</span><span class='line'>|   |-- javadoc
+</span><span class='line'>|   |-- ldap
+</span><span class='line'>|   |-- mailer
+</span><span class='line'>|   |-- matrix-auth
+</span><span class='line'>|   |-- matrix-project
+</span><span class='line'>|   |-- maven-plugin
+</span><span class='line'>|   |-- pam-auth
+</span><span class='line'>|   |-- ssh-credentials
+</span><span class='line'>|   |-- ssh-slaves
+</span><span class='line'>|   |-- subversion
+</span><span class='line'>|   |-- translation
+</span><span class='line'>|   <span class="sb">`</span>-- windows-slaves
+</span><span class='line'>|-- secrets
+</span><span class='line'>|-- updates
+</span><span class='line'><span class="sb">`</span>-- userContent
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Plug-ins</h1>
+
+<p>Jenkins is configurable with <a href="https://wiki.jenkins-ci.org/display/JENKINS/Plugins">community plugins</a>. For my project, I wanted to include git support but by default jenkins only supports CVS and subversion. Turns out you can easily install plugins via the web-interface. Make sure you already have <code>git</code> installed on the jenkins server. From the main page:</p>
+
+<ol>
+<li>click <code>Manage Jekins</code></li>
+<li><code>Manage Plugins</code></li>
+<li><code>Available</code></li>
+<li>Type &lsquo;git plugin&rsquo; in the search bar</li>
+<li>Select the Git Plugin and <code>Download and Reboot</code> <img class="center" src="/images/jenkins-install-gitpl.png"></li>
+<li>Select the option to reboot when no jobs are running</li>
+</ol>
+
+
+<h1>Run tests against a git project</h1>
+
+<p>From our main jenkins page:</p>
+
+<ol>
+<li><code>New item</code></li>
+<li>Fill out <code>Item name</code> and select <code>Build a free-style software project</code></li>
+<li>Scroll down to source code management and select <code>git</code></li>
+<li>Enter the URL of the git repository and any credentials you may need. For my test purposes I pointed to a file-system path that I have shared with my jenkins test server. If jenkins can&rsquo;t reach the git URL you&rsquo;ll get an error before you hit save which is nice.</li>
+<li>Under <code>Build Triggers</code> &ndash; set up a schedule under <code>Poll SCM</code>. The syntax is similar to Unix crontab. The documentation recommends that you utilize an H in place of a field in order to help distribute the workload amongst multiple jobs. For example <code>H * * * *</code> will run a job every hour at a variable minute related to other scheduled jobs.</li>
+<li>Finally under <code>build</code>/<code>Execute Shell</code> &ndash; set up the scripts that are necessary for testing your project. Here was an example for mine that I found from a <a href="http://iamnearlythere.com/jenkins-python-virtualenv/">blogger</a> :</li>
+</ol>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">PATH</span><span class="o">=</span><span class="nv">$WORKSPACE</span>/venv/bin:/usr/local/bin:<span class="nv">$PATH</span>
+</span><span class='line'><span class="k">if</span> <span class="o">[</span> ! -d <span class="s2">&quot;venv&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">        </span>virtualenv venv
+</span><span class='line'><span class="k">fi</span>
+</span><span class='line'>. venv/bin/activate
+</span><span class='line'>
+</span><span class='line'>pip install -r requirements.txt
+</span><span class='line'>nosetests -v -s
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can manually kick off a build from the Jenkins job page using <code>Build now</code>. You can follow it live with the console view to see the output from the scripts. The git files will be pulled into your build workspace which for our Ubuntu install was  <code>/var/lib/jenkins/jobs/project_name/workspace/</code></p>
+
+<h1>Git Hook</h1>
+
+<p>You can tie a build into your git repo using a <a href="http://git-scm.com/book/en/Customizing-Git-Git-Hooks">git hook</a> and by supplying a specially formatted HTTP GET request to your jenkins server. You won&rsquo;t have to authenticate to jenkins to kick this off, so just keep that in mind during deployment. It is recommended to use <code>curl</code> to kick this off using the following format:</p>
+
+<p><code>curl http://yourserver/jenkins/git/notifyCommit?url=&lt;URL of the Git repository&gt;[&amp;branches=branch1[,branch2]*][&amp;sha1=&lt;commit ID&gt;]</code></p>
+
+<p>The git jenkins plugin will determine what jobs are associated with the <code>&lt;URL of the Git repository&gt;</code> and start those builds. You&rsquo;ll need to setup some kind of polling configuration on the job in order for this to work right.</p>
+
+<p>Overall it was fairly painless to get it up and running for testing purposes. I didn&rsquo;t do any due dilligence to lock this down in my vagrant environment but that would be a primary concern for me when rolling this out in a production environment.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1000,6 +1167,10 @@ ssh logins</p>
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/05/jenkins-primer/">Jenkins Primer</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/05/04/chef-getting-started-with-recipes/">Chef - Getting Started With Recipes</a>
