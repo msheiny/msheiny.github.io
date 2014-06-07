@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Chef | The Sheinburger]]></title>
+  <link href="http://msheiny.github.io/blog/categories/chef/atom.xml" rel="self"/>
+  <link href="http://msheiny.github.io/"/>
+  <updated>2014-06-07T16:07:33-04:00</updated>
+  <id>http://msheiny.github.io/</id>
+  <author>
+    <name><![CDATA[Mike Sheinberg]]></name>
+    <email><![CDATA[m.sheiny@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Chef Recipes Expanded]]></title>
+    <link href="http://msheiny.github.io/blog/2014/05/19/okay-more-chef-notes/"/>
+    <updated>2014-05-19T18:19:18-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/05/19/okay-more-chef-notes</id>
+    <content type="html"><![CDATA[<p><img class="center" src="/images/chef_on_fire.jpg"></p>
+
+<p>So here are some chef notes. I watched some videos, read some documentation and
+then I wrote some notes. I should probably find a new hobby.</p>
+
+<h1>The Chef-client run process</h1>
+
+<p>This <a href="http://docs.opscode.com/essentials_nodes_chef_run.html">page</a> provides a good starting point and diagram. I extracted the high-level steps as follows:</p>
+
+<ol>
+<li><em>Get configuration data</em> &ndash; Node gets process configuration data from it&rsquo;s own <code>client.rb</code> and from <code>ohai</code></li>
+<li><em>authentication</em> &ndash; client authenticates to the chef server using RSA keys and node name. On first run, the chef-validator will be used to generate the RSA private key.</li>
+<li><em>get, rebuild node object</em> &ndash; client pulls down node object from server and rebuilds it.</li>
+<li><em>expand the run-list</em> &ndash; chef client expands the full run-list from the latest node object that should be applied and in what order.</li>
+<li><em>sync cookbooks</em> &ndash; asks the chef for required cookbook files and pulls down any changed and new files (compared to whats in cache from last run)</li>
+<li><em>Reset node attributes</em> &ndash; attributes in rebuilt node object are reset and refilled with attributes from files, environments, roles, and <code>ohai</code>.</li>
+<li><em>Compile resource collection</em> &ndash; determine all resources that will be needed to process the run-list</li>
+<li><em>Converge the node</em> &ndash; client configures the system based on info collected</li>
+<li><em>Update the node object, process exception and report handlers</em> &ndash; client updates node object on server and will go through any exception and report handling as necessary.</li>
+</ol>
+
+
+<h1>Authentication and Authorization</h1>
+
+<p>Communication done via Chef Server API via REST. The server requires authentication via public keys. Public keys stored on chef server, private keys on nodes. The <code>chef-client</code> and <code>knife</code> tools all use the Chef Server API and will sign a special group of HTTP headers with the private key.</p>
+
+<p>During the first <code>chef-client</code> run, there is no private key so the chef-client will try the private key assigned to the chef-validator. Assuming that goes successfully, the chef-client will obtain a <code>client.pem</code> private key for future authentication.</p>
+
+<p>The chef-client authentication workflow:</p>
+
+<ol>
+<li>Look in <code>/etc/chef/client.pem</code> for a node private key</li>
+<li>If that doesn&rsquo;t work, check the validator in <code>/etc/chef/validation.pem</code></li>
+</ol>
+
+
+<p>During an initial knife bootstrap, knife will copy the validation pem over to the node to do an initial chef-client run.</p>
+
+<h1>Compile and Execute</h1>
+
+<p>This stage iterating through our run list resources, collecting that into a list, and then iterating over that on the client to determine next action. Chef client will compare to see if the resource is in the appropriate state. If it is already there, no action is taken. Otherwise, the client will work to put it in the desired state.</p>
+
+<h1>Node Object</h1>
+
+<ul>
+<li>Any machine configured to be maintained by Chef</li>
+<li>Node object is always available to you from within a recipe</li>
+<li><p>Each node must have a unique name within an organization. Chef defaults to the FQDN.</p></li>
+<li><p>Nodes are made up of attributes</p>
+
+<ul>
+<li>Many are discovered automatically (<code>ohai</code>)</li>
+<li>Other objects in Chef can add Node attributes (cookbooks, roles/environments, recipes, attribute files)</li>
+<li>Nodes are stored and indexed on the Chef server</li>
+</ul>
+</li>
+</ul>
+
+
+<p>You can quickly get various attribute data from your node through <code>knife</code> or <code>ohai</code></p>
+
+<p>```bash</p>
+
+<h1>From the chef node directly</h1>
+
+<p>$ sudo ohai</p>
+
+<h1>Or from the knife output</h1>
+
+<p>$ knife node list chefclient -l</p>
+
+<h1>You can modify formatting options</h1>
+
+<h1>$ knife node list {clientname} -F{format}</h1>
+
+<p>$ knife node list chefclient -Fj
+{
+  &ldquo;name&rdquo;: &ldquo;chefclient&rdquo;,
+  &ldquo;chef_environment&rdquo;: &ldquo;_default&rdquo;,
+  &ldquo;run_list&rdquo;: [</p>
+
+<pre><code>"recipe[apt]",
+"recipe[apache_tutorial]"
+</code></pre>
+
+<p>  ],
+  &ldquo;normal&rdquo;: {</p>
+
+<pre><code>"tags": [
+]
+</code></pre>
+
+<p>  }
+}</p>
+
+<h1>List a specific attribute with -a</h1>
+
+<h1>$ knife node list clientname -a {attribute}</h1>
+
+<p>$ knife node list chefclient -a platform_version
+chefclient:
+  platform_version: 12.04
+```</p>
+
+<p>Knife searches are based on Apache Solr and are in the format:</p>
+
+<p><code>
+key:search_pattern
+</code></p>
+
+<ul>
+<li>Key = field name found</li>
+<li>search pattern = what will be searched for</li>
+</ul>
+
+
+<p>Examples:</p>
+
+<p>```bash</p>
+
+<h1>Wildcard over everything</h1>
+
+<p>knife search node &lsquo;<em>:</em>&rsquo;</p>
+
+<h1>Search for node running ubuntu</h1>
+
+<p>knife search node &lsquo;platform:ubuntu&rsquo;
+```</p>
+
+<h1>Templates and Cross platform</h1>
+
+<p>You can utilize Ruby within the recipe which can help to create dynamic run-lists. Combining variables, loops, case statements, etc. can make for some powerful conditional recipes.</p>
+
+<p>Variable usage:</p>
+
+<p>```ruby</p>
+
+<p>package_name = &ldquo;apache2&rdquo;</p>
+
+<p>if node[:platform] == &ldquo;centos&rdquo;</p>
+
+<pre><code>package_name = "httpd"
+</code></pre>
+
+<p>end</p>
+
+<p>package package_name do
+  action :install
+end
+```</p>
+
+<p>Case usage:</p>
+
+<p>```ruby
+package &ldquo;apache2&rdquo; do
+  case node[:platform]
+  when &ldquo;centos&rdquo;,&ldquo;redhat&rdquo;,&ldquo;fedora&rdquo;,&ldquo;suse&rdquo;</p>
+
+<pre><code>package_name "httpd"
+</code></pre>
+
+<p>  when &ldquo;debian&rdquo;,&ldquo;ubuntu&rdquo;</p>
+
+<pre><code>package_name "apache2"
+</code></pre>
+
+<p>  when &ldquo;arch&rdquo;</p>
+
+<pre><code>package_name "apache"
+</code></pre>
+
+<p>  end
+  action :install
+end
+```</p>
+
+<p>Array iteration:</p>
+
+<p><code>ruby
+["apache2", "apache2-mpm"].each do |p|
+  package p
+end
+</code></p>
+
+<p>We can utilize an Embedded Ruby template instead of static files that will be dynamically modified when copied down to our node. These are commonly named with a <code>.erb</code> suffix and can contain ruby code within text. In order to embed ruby we will need to utilize the <code>&lt;%= %&gt;</code> tag:</p>
+
+<p>```html
+<html></p>
+
+<p><p></p>
+
+<pre><code>Hello, &lt;%= "my name is #{$ruby}" %&gt;
+</code></pre>
+
+<p></p>
+</html>
+```</p>
+
+<p>We can feed in a template file with the <code>template</code> resource like this:</p>
+
+<p>```
+template &ldquo;/etc/sudoers&rdquo; do
+  source &ldquo;sudoers.erb&rdquo;
+  mode 0440
+  owner &ldquo;root&rdquo;
+  group &ldquo;root&rdquo;
+  variables({</p>
+
+<pre><code> :sudoers_groups =&gt; node[:authorization][:sudo][:groups],
+ :sudoers_users =&gt; node[:authorization][:sudo][:users]
+</code></pre>
+
+<p>  })
+end
+```</p>
+
+<p>The sudoers.erb file referenced above will need to go into the <code>templates/default/sudoers.erb</code> instead of a typical file path at <code>files/default/sudoers.erb</code>. Chef will try to match up the most specific file by the client platform though and will look in this order:</p>
+
+<p><code>templates/</code>
+1. <code>host-node[:fqdn]/</code>
+2. <code>node[:platform]-node[:platform_version]/</code>
+3. <code>node[:platform]-version_components/</code>
+4. <code>node[:platform]/</code>
+5. <code>default/</code></p>
+
+<p>For example, you could store the file in <code>templates/ubuntu-12.04/sudoers.erb</code>.</p>
+
+<h1>Attributes</h1>
+
+<p><code>Attributes</code> are specific details about a node and can be assigned from one of the following locations:</p>
+
+<ul>
+<li>Nodes (collected by Ohai at the start of each chef-client run)</li>
+<li>Attribute files (in cookbooks)</li>
+<li>Recipes (in cookbooks)</li>
+<li>Environments</li>
+<li>Roles</li>
+</ul>
+
+
+<p>The precedence level that determines which attribute is applied is as follows :</p>
+
+<ol>
+<li>A default attribute located in a cookbook attribute file</li>
+<li>A default attribute located in a recipe</li>
+<li>A default attribute located in an environment</li>
+<li>A default attribute located in role</li>
+<li>A force_default attribute located in a cookbook attribute file</li>
+<li>A force_default attribute located in a recipe</li>
+<li>A normal attribute located in a cookbook attribute file</li>
+<li>A normal attribute located in a recipe</li>
+<li>An override attribute located in a cookbook attribute file</li>
+<li>An override attribute located in a recipe</li>
+<li>An override attribute located in a role</li>
+<li>An override attribute located in an environment</li>
+<li>A force_override attribute located in a cookbook attribute file</li>
+<li>A force_override attribute located in a recipe</li>
+<li>An automatic attribute identified by Ohai at the start of the chef-client run</li>
+</ol>
+
+
+<p>You can more directly influence precedence by taking advantage of attribute types when getting and setting. The types available are (in order of precedence, lowest to highest):</p>
+
+<ul>
+<li><code>default</code> &ndash; lowest precedence, should be used in cookbooks when possible</li>
+<li><code>force_default</code> &ndash; force attribute in cookbook to take over default set in an environment  or role</li>
+<li><code>normal</code> &ndash; not reset during chef-client run and has higher precedence than default</li>
+<li><code>override</code> &ndash; reset at start of each client run</li>
+<li><code>force_override</code> &ndash; ensure override in cookbook takes over for an override attribute in a role or environment</li>
+<li><code>automatic</code> &ndash; discovered by <code>ohai</code> and has highest precedence</li>
+</ul>
+
+
+<p>To store attributes in a cookbook, we can place them in <code>attributes/default.rb</code>:</p>
+
+<p>```</p>
+
+<h1>node object is implicit so we can actually do either of the following:</h1>
+
+<p>node.default[:apache][:dir]          = &ldquo;/etc/apache2&rdquo;
+node.default[:apache][:listen_ports] = [ &ldquo;80&rdquo;,&ldquo;443&rdquo; ]</p>
+
+<h1>OR</h1>
+
+<p>default[:apache][:dir]          = &ldquo;/etc/apache2&rdquo;
+default[:apache][:listen_ports] = [ &ldquo;80&rdquo;,&ldquo;443&rdquo; ]
+```</p>
+
+<h1>Roles</h1>
+
+<p>A good way to bridge together cookbooks and attributes for re-use. To start a role, start by creating an <code>.rb</code> file in your <code>roles/</code> folder in the chef repository. Here is an example of the three required attributes:</p>
+
+<p>```ruby</p>
+
+<h1>roles/webserver.rb</h1>
+
+<p>name &ldquo;webserver&rdquo;
+description &ldquo;The base role for systems that serve HTTP traffic&rdquo;
+run_list &ldquo;recipe[apache2]&rdquo;, &ldquo;recipe[apache2::mod_ssl]&rdquo;, &ldquo;role[monitor]&rdquo;
+```</p>
+
+<p>Common role tasks in knife:</p>
+
+<p>```bash</p>
+
+<h1>Upload a role</h1>
+
+<p>knife role from file webserver.rb</p>
+
+<h1>Show roles</h1>
+
+<p>knife role list</p>
+
+<h1>Show details on a specific role</h1>
+
+<p>knife role show webserver</p>
+
+<h1>Delete a role</h1>
+
+<p>knife role delete webserver</p>
+
+<h1>Add a role to a node</h1>
+
+<p>knife node run_list add chefclient &lsquo;role[webserver]&rsquo;
+```</p>
+
+<h1>Environments</h1>
+
+<p>A way to logically break up workflow and reflect organizational patterns.
+Every node can be assigned to a single environment. By default, all nodes
+are part of the <code>_default</code> environment. You can create a new environment by creating a *.rb file in the <code>environments</code> folder of the chef-repo. This process is very similar to creating a new role. Your environment file needs
+a <code>name</code>, <code>cookbook</code>, <code>description</code> (<code>default_attributes</code> and <code>override_attributes</code> are optional):</p>
+
+<p>```ruby</p>
+
+<h1>environments/dev.rb</h1>
+
+<p>name &ldquo;dev&rdquo;
+description &ldquo;The development environment&rdquo;
+cookbook_versions  &ldquo;couchdb&rdquo; => &ldquo;= 11.0.0&rdquo;
+default_attributes &ldquo;apache2&rdquo; => { &ldquo;listen_ports&rdquo; => [ &ldquo;80&rdquo;, &ldquo;443&rdquo; ] }
+```</p>
+
+<p>Here are some environment management commands from knife:</p>
+
+<p>```bash</p>
+
+<h1>Create environment from dev.rb file</h1>
+
+<p>knife environment create from file dev.rb</p>
+
+<h1>Show available environments</h1>
+
+<p>knife environment list</p>
+
+<h1>Show environment assignment for a node</h1>
+
+<p>knife node show $nodename | grep ^Env
+```</p>
+
+<p>It appears you&rsquo;ll have to use a plugin to knife to modify environments but otherwise it is a very trivial task to perform from the chef server web interface.</p>
+
+<h1>Community Cookbooks</h1>
+
+<p>There is a great online resource for interacting with cookbooks from others online at <a href="http://community.opscode.com/cookbooks">http://community.opscode.com/cookbooks</a>. Once you find a good looking cookbook you&rsquo;d like to pull into your own environment (after proper vetting of course), you can use knife to assist here:</p>
+
+<p>```bash</p>
+
+<h1>search the community site</h1>
+
+<p>knife cookbook site search chef-client</p>
+
+<h1>show detail about a particular package</h1>
+
+<p>knife cookbook site show chef-client</p>
+
+<h1>download community cookbook into local tar file</h1>
+
+<p>knife cookbook site download chef-client</p>
+
+<h1>Install cookbook into cookbooks directory and commit changes</h1>
+
+<p>knife cookbook site install chef-client</p>
+
+<p>```</p>
+
+<p>From what I can tell, using the <code>site install</code> command is against chef best practices. You really should be vetting third-party code before pulling it down and committing it to your environment. There is a great community of chef tools and knife plugins out there. The Opscode folks have singled out some of the most common in the <a href="http://www.getchef.com/downloads/chef-dk/">Chef Development Kit</a>.</p>
+
+<p>Okay! Great notes everyone!</p>
+
+<h1>Reference</h1>
+
+<ul>
+<li><a href="http://youtu.be/H3Ggublb378">Fundamentals Webinar &ndash; Module 4</a></li>
+<li><a href="http://youtu.be/46NQNzkCe_U">Fundamentals Webinar &ndash; Module 5</a></li>
+<li><a href="http://docs.opscode.com/essentials_nodes_chef_run.html">Chef Run</a></li>
+<li><a href="http://docs.opscode.com/auth.html">Authentication and Authorization</a></li>
+<li><a href="http://docs.opscode.com/essentials_search.html">Searching</a></li>
+<li><a href="http://docs.opscode.com/essentials_cookbook_recipes.html">Recipe Docs</a></li>
+<li><a href="http://docs.opscode.com/chef_overview_attributes.html">Attributes</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Chef - Getting Started With Recipes]]></title>
+    <link href="http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes/"/>
+    <updated>2014-05-04T17:20:04-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes</id>
+    <content type="html"><![CDATA[<p><img class="center" src="/images/recipe_book.jpg"></p>
+
+<p>Check out my primer chef document for how to initially configure your chef test environment with vagrant. This document assumes you are starting from there.</p>
+
+<h1>Apache Tutorial Cookbook</h1>
+
+<p>These are my expanded notes from one of the official <a href="https://learnchef.opscode.com/tutorials/create-your-first-cookbook/">docs</a>. Before we proceed, let&rsquo;s take a quick look at the default <a href="https://github.com/opscode/chef-repo">chef-repo</a> tree:</p>
+
+<p><code>
+chef-repo
+├── .chef
+├── certificates
+├── config
+├── cookbooks
+├── data_bags
+├── environments
+└── roles
+</code></p>
+
+<p>When you are inside that directory and have already configured your knife config file, you can start a cookbook with:</p>
+
+<p><code>
+knife cookbook create apache_tutorial
+</code></p>
+
+<p>Let&rsquo;s see how this changes our workspace:</p>
+
+<p>```
+chef-repo
+└── cookbooks</p>
+
+<pre><code>    └── apache_tutorial
+        ├── attributes
+        ├── CHANGELOG.md
+        ├── definitions
+        ├── files
+        │   └── default
+        ├── libraries
+        ├── metadata.rb
+        ├── providers
+        ├── README.md
+        ├── recipes
+        │   └── default.rb
+        ├── resources
+        └── templates
+            └── default
+</code></pre>
+
+<p>```</p>
+
+<p>Make the following modifications:</p>
+
+<p><code>recipes/default.rb</code>:
+```
+package &ldquo;apache2&rdquo; do
+  action :install
+end</p>
+
+<p>service &ldquo;apache2&rdquo; do
+  action [ :enable, :start ]
+end</p>
+
+<p>cookbook_file &ldquo;/var/www/index.html&rdquo; do
+  source &ldquo;index.html&rdquo;
+  mode &ldquo;0644&rdquo;
+end
+```</p>
+
+<p><code>files/default/index.html</code>:
+<code>
+&lt;html&gt;
+&lt;body&gt;
+  &lt;h1&gt;Hello, world!&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></p>
+
+<p>Upload that recipe to the chef server:</p>
+
+<p><code>
+$ knife cookbook upload apache_tutorial
+</code></p>
+
+<h1>Run List</h1>
+
+<p>Now we need to add that recipe to our node&rsquo;s <code>run list</code>. To verify the run list of a node:</p>
+
+<p><code>
+$ knife node show chefclient
+Node Name:   chefclient
+Environment: _default
+FQDN:        ChefClient
+IP:          10.0.2.15
+Run List:    
+Roles:       
+Recipes:     
+Platform:    ubuntu 12.04
+Tags:
+</code></p>
+
+<p>Let&rsquo;s add our apache recipe to that node&rsquo;s runlist and confirm:</p>
+
+<p>```bash
+$ knife node run_list add chefclient apache_tutorial
+chefclient:
+  run_list: recipe[apache_tutorial]</p>
+
+<p>$ knife node show chefclient
+Node Name:   chefclient
+Environment: _default
+FQDN:        ChefClient
+IP:          10.0.2.15
+Run List:    recipe[apache_tutorial]
+Roles:     <br/>
+Recipes:   <br/>
+Platform:    ubuntu 12.04
+Tags:
+```</p>
+
+<p>To force our chefclient to run this recipe and check into our chef server:</p>
+
+<p><code>
+$ knife ssh "name:chefclient" -x vagrant -P vagrant "sudo chef-client"
+</code></p>
+
+<h1>References</h1>
+
+<ul>
+<li><a href="http://docs.opscode.com/chef/resources.html">Chef Resources/Providers Reference</a></li>
+<li><a href="https://learnchef.opscode.com/tutorials/create-your-first-cookbook/">Chef Tutorial</a></li>
+<li><a href="http://docs.opscode.com/essentials_search.html">Chef Query</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[A Chef Primer]]></title>
+    <link href="http://msheiny.github.io/blog/2014/05/04/a-chef-primer/"/>
+    <updated>2014-05-04T17:19:40-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/05/04/a-chef-primer</id>
+    <content type="html"><![CDATA[<p><img class="center" src="/images/chef_veggies.jpg"></p>
+
+<h3>Vagrant</h3>
+
+<p>My focus was to learn about Chef while using Vagrant for easy machine management. I&rsquo;m pretty familiar with the basics of vagrant already but there were two extras I needed for this project:
+1. Quick snapshoting capabilities
+2. Multi-machine setup for a Chef server and node</p>
+
+<p>For 1. turns out you need a plugin for that. There are a few out there but I went with
+<a href="https://github.com/dergachev/vagrant-vbox-snapshot">vagrant-vbox-snapshot</a>.</p>
+
+<p>Snapshot plugin installation:
+<code>
+vagrant plugin install vagrant-vbox-snapshot
+</code></p>
+
+<p>The base commands I care about are:
+<code>
+vagrant snapshot take &lt;machine_name&gt; $snapshotname
+vagrant snapshot back &lt;machine_name&gt;
+</code></p>
+
+<p><a href="https://docs.vagrantup.com/v2/multi-machine/">Multi-machine</a> mode was fairly straightforward to configure. Here are the relevant pieces from my <code>Vagrantfile</code>:</p>
+
+<p>```
+Vagrant.configure(&ldquo;2&rdquo;) do |config|</p>
+
+<pre><code>config.vm.define "chef-server", primary: true do |chefserver|
+    chefserver.vm.network :private_network, ip: "192.168.50.100"
+    chefserver.vm.box = "precise64"
+end
+
+config.vm.define "chef-node" do |chefnode|
+    chefnode.vm.network :private_network, ip: "192.168.50.10"
+    chefnode.vm.box = "precise64"
+end
+
+end
+</code></pre>
+
+<p>```</p>
+
+<p>To jump between these two boxes you&rsquo;ll now need to specify the machine name. I
+configured the chef server as the default machine with <code>primary: true</code> but you&rsquo;ll need
+to refer to <code>chef-node</code> by name in your vagrant commands. For example, you can do
+<code>vagrant ssh chef-node</code>.</p>
+
+<h3>Chef Notes</h3>
+
+<p>Chef key terms:</p>
+
+<ul>
+<li><code>server</code> &ndash; stores infrastructure pieces</li>
+<li><code>workstation</code> &ndash; where you interact with chef server</li>
+<li><code>nodes</code> &ndash; a node in your infrastructure</li>
+<li><code>resources</code> &ndash; items to be manipulated (directories, files, etc.)
+
+<ul>
+<li>Represents a piece of the system and state. Such as a package to be installed, service to be running, file to be generated, user to be managed, etc.</li>
+</ul>
+</li>
+<li><code>recipe</code> &ndash; configuration files that describe resources and their desired state. the &ldquo;work-horse&rdquo; of chef</li>
+<li><code>cookbook</code> &ndash; hold recipes, templates, files, and custom resources.</li>
+<li><code>organizations</code> &ndash; enterprise chef independent tenants</li>
+<li><code>environments</code> &ndash; start with a single environment, can tag different life-stages and contain different data attributes.</li>
+<li><code>roles</code> &ndash; represent types of servers. roles define policies.</li>
+<li><code>run list</code> &ndash; list of chef configuration files that should be applied</li>
+<li><code>nodes</code> &ndash;  represent the machines to be managed. can have 0+ roles. belong to one environment and one organization</li>
+</ul>
+
+
+<p><code>chef-client</code>
+* Runs on each node
+* gathers current system config and
+* pulls down policy from chef server and enforce the policy on node</p>
+
+<h4>High-level execution steps</h4>
+
+<p>How Chef brings a machine in-line with policy:
+1. Chef client periodically polls chef server to determine what policies should be running
+2. The chef server figures that out and provides the client with a <code>run list</code>
+3. The chef-client looks at each recipe in the <code>run list</code> and determines if it is in line with that policy.</p>
+
+<h3>Chef-server Install</h3>
+
+<ol>
+<li>Download system package from chef install site</li>
+<li>Depending on your platform, you&rsquo;ll probably utilize &lsquo;rpm&rsquo; or &lsquo;dpkg&rsquo; to install that</li>
+<li>Ensure that DNS is properly configured for the server, or fake it by editing the <code>/etc/hosts</code> file</li>
+<li>run <code>sudo chef-server-ctl reconfigure</code> which kicks off what essentially looks like a chef cookbook to build the chef server</li>
+<li>You&rsquo;ll now have access to a chef web front-end on the server on standard web ports</li>
+<li>You can login with admin / p@ssw0rd1</li>
+</ol>
+
+
+<h3>Chef workstation Install</h3>
+
+<p>This is the computer(s) where you will manage the chef cookbooks and recipes. You should always be working from within your chef-repo (see further down).</p>
+
+<h4>Quick install method</h4>
+
+<p><code>bash
+curl -L https://www.opscode.com/chef/install.sh | sudo bash
+</code></p>
+
+<p>This includes:
+* ruby
+* knife
+* chef-client
+* ohai</p>
+
+<p>You can also utilize ruby&rsquo;s gem installer with:</p>
+
+<p>```bash
+sudo gem install chef</p>
+
+<h1>or</h1>
+
+<p>gem install &mdash;user-install chef
+export PATH=&ldquo;~/.gem/ruby/1.9.1/bin/:$PATH&rdquo;
+```</p>
+
+<h4>Chef-repo</h4>
+
+<p>To set-up a propery formatted chef repo, start from <a href="https://github.com/opscode/chef-repo.git.">https://github.com/opscode/chef-repo.git.</a> You&rsquo;ll need to pull down a template repository and then link your repository to our chef server.</p>
+
+<p><code>bash
+git clone https://github.com/opscode/chef-repo.git
+mkdir chef-repo/.chef
+touch chef-repo/.chef/chef-validator.pem
+touch chef-repo/.chef/admin.pem
+</code></p>
+
+<p>Next, you&rsquo;ll need to pull in the certificates from the server. Log back into the web interface. Click <code>Clients</code> tab, then Chef-validator&rsquo;s <code>edit</code>, and regenerate the <code>Private key</code>. Copy the private key text from that page into the <code>chef-validator.pem</code> file we just created earlier. Do the same thing for the admin users, start with the <code>Users</code> tab and then dump the admin user&rsquo;s private key into the <code>admin.pem</code> file we created earlier.</p>
+
+<h4>Knife</h4>
+
+<p>knife is one of the primary command-line tools for managing chef instances. In order to bootstrap our knife configuration, you&rsquo;ll need to run the knife initial command:</p>
+
+<p><code>
+[msheiny:~/git/chef-repo] ± knife configure -i
+WARNING: No knife configuration file found
+Where should I put the config file? [/home/msheiny/.chef/knife.rb] .chef/knife.rb
+Please enter the chef server URL: [https://sheiny-desktop.sheiny.com:443] https://chefserver                                                 
+Please enter a name for the new user: [msheiny]
+Please enter the existing admin name: [admin]
+Please enter the location of the existing admin's private key: [/etc/chef-server/admin.pem] .chef/admin.pem
+Please enter the validation clientname: [chef-validator]      
+Please enter the location of the validation key: [/etc/chef-server/chef-validator.pem] .chef/chef-validator.pem
+Please enter the path to a chef repository (or leave blank): /home/msheiny/git/chef-repo
+Creating initial API user...
+Please enter a password for the new user:
+Created user[msheiny]
+Configuration file written to /home/msheiny/git/chef-repo/.chef/knife.rb
+</code></p>
+
+<p>You can commit the repository at this time if you want. Just be weary of ensuring that the *pem files do not get commited or you might want to exclude the entire <code>.chef</code> directory altogether.</p>
+
+<p>Test to make sure everything is working correctly by running &ndash; <code>knife user list</code></p>
+
+<h4>Chef client Install</h4>
+
+<p>We can bootstrap a chef client into our instance with help from knife!</p>
+
+<p><code>bash
+[msheiny:~/git/chef-repo] ± knife bootstrap chefclient.sheiny.com -x vagrant -P vagrant -N chefclient --sudo
+</code>
+The third argument is the fqdn of the node, <code>-x</code> and <code>-P</code> are the username/password, and <code>-N</code> is the name we want to refer to our new client by.</p>
+
+<p>After that is done we can confirm with <code>client list</code> and we should see <code>chefclient</code> as part of the list:
+<code>bash
+[msheiny:~/git/chef-repo] ± knife client list
+</code></p>
+
+<h2>Resources</h2>
+
+<ul>
+<li><a href="http://www.getchef.com/chef/install/">Chef Install Site</a></li>
+<li><a href="https://www.digitalocean.com/community/articles/how-to-install-a-chef-server-workstation-and-client-on-ubuntu-vps-instances">Third-party Chef Install Tutorial</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

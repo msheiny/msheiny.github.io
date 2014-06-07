@@ -1,102 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
 
-<!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  <title>The Sheinburger</title>
-  <meta name="author" content="Mike Sheinberg">
-
-  
-  <meta name="description" content="So here are some chef notes. I watched some videos, read some documentation and
-then I wrote some notes. I should probably find a new hobby. The &hellip;">
-  
-
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><![CDATA[The Sheinburger]]></title>
+  <link href="http://msheiny.github.io/atom.xml" rel="self"/>
+  <link href="http://msheiny.github.io/"/>
+  <updated>2014-06-07T16:07:33-04:00</updated>
+  <id>http://msheiny.github.io/</id>
+  <author>
+    <name><![CDATA[Mike Sheinberg]]></name>
+    <email><![CDATA[m.sheiny@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
 
   
-  <link rel="canonical" href="http://msheiny.github.io">
-  <link href="/favicon.png" rel="icon">
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <link href="/atom.xml" rel="alternate" title="The Sheinburger" type="application/atom+xml">
-  <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
-  <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href='http://fonts.googleapis.com/css?family=Gloria+Hallelujah' rel='stylesheet' type='text/css'>
-
-  
-
-</head>
-
-<body   >
-  <header role="banner"><hgroup>
-  <h1><a href="/">The Sheinburger</a></h1>
-  
-    <h2>Self-serving content since 2014</h2>
-  
-</hgroup>
-
-</header>
-  <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-  
-<form action="http://google.com/search" method="get">
-  <fieldset role="search">
-    <input type="hidden" name="q" value="site:msheiny.github.io" />
-    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
-  </fieldset>
-</form>
-  
-<ul class="main-navigation">
-  <li><a href="/">Blog</a></li>
-  <li><a href="/blog/archives">Archives</a></li>
-</ul>
-
-</nav>
-  <div id="main">
-    <div id="content">
-      <div class="blog-index">
-  
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/19/okay-more-chef-notes/">Chef Recipes Expanded</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-19T18:19:18-04:00" pubdate data-updated="true">May 19<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img class="center" src="/images/chef_on_fire.jpg"></p>
+  <entry>
+    <title type="html"><![CDATA[Chef Recipes Expanded]]></title>
+    <link href="http://msheiny.github.io/blog/2014/05/19/okay-more-chef-notes/"/>
+    <updated>2014-05-19T18:19:18-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/05/19/okay-more-chef-notes</id>
+    <content type="html"><![CDATA[<p><img class="center" src="http://msheiny.github.io/images/chef_on_fire.jpg"></p>
 
 <p>So here are some chef notes. I watched some videos, read some documentation and
 then I wrote some notes. I should probably find a new hobby.</p>
@@ -561,42 +483,15 @@ a <code>name</code>, <code>cookbook</code>, <code>description</code> (<code>defa
 <li><a href="http://docs.opscode.com/chef_overview_attributes.html">Attributes</a></li>
 </ul>
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/05/jenkins-primer/">Jenkins Primer</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-05T19:05:57-04:00" pubdate data-updated="true">May 5<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>Installation</h1>
+  <entry>
+    <title type="html"><![CDATA[Jenkins Primer]]></title>
+    <link href="http://msheiny.github.io/blog/2014/05/05/jenkins-primer/"/>
+    <updated>2014-05-05T19:05:57-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/05/05/jenkins-primer</id>
+    <content type="html"><![CDATA[<h1>Installation</h1>
 
 <p>Following directions from the <a href="https://wiki.jenkins-ci.org/display/JENKINS/Installing+Jenkins+on+Ubuntu">Jenkins</a> site, these are my notes to configuring a base Jenkins setup on Ubuntu 12.04. Let&rsquo;s first start by adding the jenkins repository, refreshing the apt repository listing, installing, and
 starting up:</p>
@@ -615,7 +510,7 @@ starting up:</p>
 
 
 <p>By default, you&rsquo;ll be able to reach the jenkins server over HTTP on port 8080. Here is the screen you are greeted with:
-<img class="center" src="/images/jenkins-install1.png"></p>
+<img class="center" src="http://msheiny.github.io/images/jenkins-install1.png"></p>
 
 <p>Our jekins configuration files live at <code>/var/lib/jenkins</code> which happens to be the home directory for our new <code>jenkins</code> user. Here is a default directory listing upon installation:</p>
 
@@ -679,7 +574,7 @@ starting up:</p>
 <li><code>Manage Plugins</code></li>
 <li><code>Available</code></li>
 <li>Type &lsquo;git plugin&rsquo; in the search bar</li>
-<li>Select the Git Plugin and <code>Download and Reboot</code> <img class="center" src="/images/jenkins-install-gitpl.png"></li>
+<li>Select the Git Plugin and <code>Download and Reboot</code> <img class="center" src="http://msheiny.github.io/images/jenkins-install-gitpl.png"></li>
 <li>Select the option to reboot when no jobs are running</li>
 </ol>
 
@@ -728,42 +623,15 @@ starting up:</p>
 <p>The git jenkins plugin will determine what jobs are associated with the <code>&lt;URL of the Git repository&gt;</code> and start those builds. You&rsquo;ll need to setup some kind of polling configuration on the job in order for this to work right.</p>
 
 <p>Overall it was fairly painless to get it up and running for testing purposes. I didn&rsquo;t do any due dilligence to lock this down in my vagrant environment but that would be a primary concern for me when rolling this out in a production environment.</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/04/chef-getting-started-with-recipes/">Chef - Getting Started With Recipes</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-04T17:20:04-04:00" pubdate data-updated="true">May 4<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img class="center" src="/images/recipe_book.jpg"></p>
+  <entry>
+    <title type="html"><![CDATA[Chef - Getting Started With Recipes]]></title>
+    <link href="http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes/"/>
+    <updated>2014-05-04T17:20:04-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes</id>
+    <content type="html"><![CDATA[<p><img class="center" src="http://msheiny.github.io/images/recipe_book.jpg"></p>
 
 <p>Check out my primer chef document for how to initially configure your chef test environment with vagrant. This document assumes you are starting from there.</p>
 
@@ -957,42 +825,15 @@ starting up:</p>
 <li><a href="http://docs.opscode.com/essentials_search.html">Chef Query</a></li>
 </ul>
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/04/a-chef-primer/">A Chef Primer</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-04T17:19:40-04:00" pubdate data-updated="true">May 4<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img class="center" src="/images/chef_veggies.jpg"></p>
+  <entry>
+    <title type="html"><![CDATA[A Chef Primer]]></title>
+    <link href="http://msheiny.github.io/blog/2014/05/04/a-chef-primer/"/>
+    <updated>2014-05-04T17:19:40-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/05/04/a-chef-primer</id>
+    <content type="html"><![CDATA[<p><img class="center" src="http://msheiny.github.io/images/chef_veggies.jpg"></p>
 
 <h3>Vagrant</h3>
 
@@ -1212,42 +1053,15 @@ to refer to <code>chef-node</code> by name in your vagrant commands. For example
 <li><a href="https://www.digitalocean.com/community/articles/how-to-install-a-chef-server-workstation-and-client-on-ubuntu-vps-instances">Third-party Chef Install Tutorial</a></li>
 </ul>
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/17/mikrotik-and-me/">Mikrotik and Me</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-17T17:11:24-04:00" pubdate data-updated="true">Mar 17<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img class="left" src="/images/mikrotik_rtrb_750.jpg" width="400"></p>
+  <entry>
+    <title type="html"><![CDATA[Mikrotik and Me]]></title>
+    <link href="http://msheiny.github.io/blog/2014/03/17/mikrotik-and-me/"/>
+    <updated>2014-03-17T17:11:24-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/03/17/mikrotik-and-me</id>
+    <content type="html"><![CDATA[<p><img class="left" src="http://msheiny.github.io/images/mikrotik_rtrb_750.jpg" width="400"></p>
 
 <p>So I stumbled across a company out of Latvia that produces a line of hardware routers
 and manages their own Linux-based network operating system. The hardware is called
@@ -1423,42 +1237,15 @@ ssh logins</p>
 </span><span class='line'>    Script to email daily digest of network activity and router status changes
 </span></code></pre></td></tr></table></div></figure>
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/06/freeradius-and-google-pam/">Freeradius and Google Authenticator</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-06T18:56:20-05:00" pubdate data-updated="true">Mar 6<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>Caveat</h2>
+  <entry>
+    <title type="html"><![CDATA[Freeradius and Google Authenticator]]></title>
+    <link href="http://msheiny.github.io/blog/2014/03/06/freeradius-and-google-pam/"/>
+    <updated>2014-03-06T18:56:20-05:00</updated>
+    <id>http://msheiny.github.io/blog/2014/03/06/freeradius-and-google-pam</id>
+    <content type="html"><![CDATA[<h2>Caveat</h2>
 
 <p>freeradius is a bit baffling to get a full grasp on and I don&rsquo;t pretend to be an expert. My goals were two-fold &ndash; radius users authenticate against pam (<code>rlm_pam</code>) with two-factor google authenticator and ensure freeradius doesn&rsquo;t have to run as root.</p>
 
@@ -1650,113 +1437,7 @@ ssh logins</p>
 <li><code>shared_key</code> is a value found in the clients file</li>
 </ul>
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
-<aside class="sidebar">
-  
-    <section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2014/05/19/okay-more-chef-notes/">Chef Recipes Expanded</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/05/05/jenkins-primer/">Jenkins Primer</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/05/04/chef-getting-started-with-recipes/">Chef - Getting Started With Recipes</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/05/04/a-chef-primer/">A Chef Primer</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/03/17/mikrotik-and-me/">Mikrotik and Me</a>
-      </li>
-    
-  </ul>
-</section>
-
-<section>
-  <h1>GitHub Repos</h1>
-  <ul id="gh_repos">
-    <li class="loading">Status updating&#8230;</li>
-  </ul>
-  
-  <a href="https://github.com/msheiny">@msheiny</a> on GitHub
-  
-  <script type="text/javascript">
-    $(document).ready(function(){
-        if (!window.jXHR){
-            var jxhr = document.createElement('script');
-            jxhr.type = 'text/javascript';
-            jxhr.src = '/javascripts/libs/jXHR.js';
-            var s = document.getElementsByTagName('script')[0];
-            s.parentNode.insertBefore(jxhr, s);
-        }
-
-        github.showRepos({
-            user: 'msheiny',
-            count: 0,
-            skip_forks: true,
-            target: '#gh_repos'
-        });
-    });
-  </script>
-  <script src="/javascripts/github.js" type="text/javascript"> </script>
-</section>
-
-
-
-
-
-  
-</aside>
-
-    </div>
-  </div>
-  <footer role="contentinfo"><p>
-  Copyright &copy; 2014 - Mike Sheinberg -
-  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
-</p>
-
-</footer>
-  
-
-
-
-
-
-
-
-  <script type="text/javascript">
-    (function(){
-      var twitterWidgets = document.createElement('script');
-      twitterWidgets.type = 'text/javascript';
-      twitterWidgets.async = true;
-      twitterWidgets.src = '//platform.twitter.com/widgets.js';
-      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
-    })();
-  </script>
-
-
-
-
-
-</body>
-</html>
+</feed>

@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Vagrant | The Sheinburger]]></title>
+  <link href="http://msheiny.github.io/blog/categories/vagrant/atom.xml" rel="self"/>
+  <link href="http://msheiny.github.io/"/>
+  <updated>2014-06-07T16:07:33-04:00</updated>
+  <id>http://msheiny.github.io/</id>
+  <author>
+    <name><![CDATA[Mike Sheinberg]]></name>
+    <email><![CDATA[m.sheiny@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[A Chef Primer]]></title>
+    <link href="http://msheiny.github.io/blog/2014/05/04/a-chef-primer/"/>
+    <updated>2014-05-04T17:19:40-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/05/04/a-chef-primer</id>
+    <content type="html"><![CDATA[<p><img class="center" src="/images/chef_veggies.jpg"></p>
+
+<h3>Vagrant</h3>
+
+<p>My focus was to learn about Chef while using Vagrant for easy machine management. I&rsquo;m pretty familiar with the basics of vagrant already but there were two extras I needed for this project:
+1. Quick snapshoting capabilities
+2. Multi-machine setup for a Chef server and node</p>
+
+<p>For 1. turns out you need a plugin for that. There are a few out there but I went with
+<a href="https://github.com/dergachev/vagrant-vbox-snapshot">vagrant-vbox-snapshot</a>.</p>
+
+<p>Snapshot plugin installation:
+<code>
+vagrant plugin install vagrant-vbox-snapshot
+</code></p>
+
+<p>The base commands I care about are:
+<code>
+vagrant snapshot take &lt;machine_name&gt; $snapshotname
+vagrant snapshot back &lt;machine_name&gt;
+</code></p>
+
+<p><a href="https://docs.vagrantup.com/v2/multi-machine/">Multi-machine</a> mode was fairly straightforward to configure. Here are the relevant pieces from my <code>Vagrantfile</code>:</p>
+
+<p>```
+Vagrant.configure(&ldquo;2&rdquo;) do |config|</p>
+
+<pre><code>config.vm.define "chef-server", primary: true do |chefserver|
+    chefserver.vm.network :private_network, ip: "192.168.50.100"
+    chefserver.vm.box = "precise64"
+end
+
+config.vm.define "chef-node" do |chefnode|
+    chefnode.vm.network :private_network, ip: "192.168.50.10"
+    chefnode.vm.box = "precise64"
+end
+
+end
+</code></pre>
+
+<p>```</p>
+
+<p>To jump between these two boxes you&rsquo;ll now need to specify the machine name. I
+configured the chef server as the default machine with <code>primary: true</code> but you&rsquo;ll need
+to refer to <code>chef-node</code> by name in your vagrant commands. For example, you can do
+<code>vagrant ssh chef-node</code>.</p>
+
+<h3>Chef Notes</h3>
+
+<p>Chef key terms:</p>
+
+<ul>
+<li><code>server</code> &ndash; stores infrastructure pieces</li>
+<li><code>workstation</code> &ndash; where you interact with chef server</li>
+<li><code>nodes</code> &ndash; a node in your infrastructure</li>
+<li><code>resources</code> &ndash; items to be manipulated (directories, files, etc.)
+
+<ul>
+<li>Represents a piece of the system and state. Such as a package to be installed, service to be running, file to be generated, user to be managed, etc.</li>
+</ul>
+</li>
+<li><code>recipe</code> &ndash; configuration files that describe resources and their desired state. the &ldquo;work-horse&rdquo; of chef</li>
+<li><code>cookbook</code> &ndash; hold recipes, templates, files, and custom resources.</li>
+<li><code>organizations</code> &ndash; enterprise chef independent tenants</li>
+<li><code>environments</code> &ndash; start with a single environment, can tag different life-stages and contain different data attributes.</li>
+<li><code>roles</code> &ndash; represent types of servers. roles define policies.</li>
+<li><code>run list</code> &ndash; list of chef configuration files that should be applied</li>
+<li><code>nodes</code> &ndash;  represent the machines to be managed. can have 0+ roles. belong to one environment and one organization</li>
+</ul>
+
+
+<p><code>chef-client</code>
+* Runs on each node
+* gathers current system config and
+* pulls down policy from chef server and enforce the policy on node</p>
+
+<h4>High-level execution steps</h4>
+
+<p>How Chef brings a machine in-line with policy:
+1. Chef client periodically polls chef server to determine what policies should be running
+2. The chef server figures that out and provides the client with a <code>run list</code>
+3. The chef-client looks at each recipe in the <code>run list</code> and determines if it is in line with that policy.</p>
+
+<h3>Chef-server Install</h3>
+
+<ol>
+<li>Download system package from chef install site</li>
+<li>Depending on your platform, you&rsquo;ll probably utilize &lsquo;rpm&rsquo; or &lsquo;dpkg&rsquo; to install that</li>
+<li>Ensure that DNS is properly configured for the server, or fake it by editing the <code>/etc/hosts</code> file</li>
+<li>run <code>sudo chef-server-ctl reconfigure</code> which kicks off what essentially looks like a chef cookbook to build the chef server</li>
+<li>You&rsquo;ll now have access to a chef web front-end on the server on standard web ports</li>
+<li>You can login with admin / p@ssw0rd1</li>
+</ol>
+
+
+<h3>Chef workstation Install</h3>
+
+<p>This is the computer(s) where you will manage the chef cookbooks and recipes. You should always be working from within your chef-repo (see further down).</p>
+
+<h4>Quick install method</h4>
+
+<p><code>bash
+curl -L https://www.opscode.com/chef/install.sh | sudo bash
+</code></p>
+
+<p>This includes:
+* ruby
+* knife
+* chef-client
+* ohai</p>
+
+<p>You can also utilize ruby&rsquo;s gem installer with:</p>
+
+<p>```bash
+sudo gem install chef</p>
+
+<h1>or</h1>
+
+<p>gem install &mdash;user-install chef
+export PATH=&ldquo;~/.gem/ruby/1.9.1/bin/:$PATH&rdquo;
+```</p>
+
+<h4>Chef-repo</h4>
+
+<p>To set-up a propery formatted chef repo, start from <a href="https://github.com/opscode/chef-repo.git.">https://github.com/opscode/chef-repo.git.</a> You&rsquo;ll need to pull down a template repository and then link your repository to our chef server.</p>
+
+<p><code>bash
+git clone https://github.com/opscode/chef-repo.git
+mkdir chef-repo/.chef
+touch chef-repo/.chef/chef-validator.pem
+touch chef-repo/.chef/admin.pem
+</code></p>
+
+<p>Next, you&rsquo;ll need to pull in the certificates from the server. Log back into the web interface. Click <code>Clients</code> tab, then Chef-validator&rsquo;s <code>edit</code>, and regenerate the <code>Private key</code>. Copy the private key text from that page into the <code>chef-validator.pem</code> file we just created earlier. Do the same thing for the admin users, start with the <code>Users</code> tab and then dump the admin user&rsquo;s private key into the <code>admin.pem</code> file we created earlier.</p>
+
+<h4>Knife</h4>
+
+<p>knife is one of the primary command-line tools for managing chef instances. In order to bootstrap our knife configuration, you&rsquo;ll need to run the knife initial command:</p>
+
+<p><code>
+[msheiny:~/git/chef-repo] ± knife configure -i
+WARNING: No knife configuration file found
+Where should I put the config file? [/home/msheiny/.chef/knife.rb] .chef/knife.rb
+Please enter the chef server URL: [https://sheiny-desktop.sheiny.com:443] https://chefserver                                                 
+Please enter a name for the new user: [msheiny]
+Please enter the existing admin name: [admin]
+Please enter the location of the existing admin's private key: [/etc/chef-server/admin.pem] .chef/admin.pem
+Please enter the validation clientname: [chef-validator]      
+Please enter the location of the validation key: [/etc/chef-server/chef-validator.pem] .chef/chef-validator.pem
+Please enter the path to a chef repository (or leave blank): /home/msheiny/git/chef-repo
+Creating initial API user...
+Please enter a password for the new user:
+Created user[msheiny]
+Configuration file written to /home/msheiny/git/chef-repo/.chef/knife.rb
+</code></p>
+
+<p>You can commit the repository at this time if you want. Just be weary of ensuring that the *pem files do not get commited or you might want to exclude the entire <code>.chef</code> directory altogether.</p>
+
+<p>Test to make sure everything is working correctly by running &ndash; <code>knife user list</code></p>
+
+<h4>Chef client Install</h4>
+
+<p>We can bootstrap a chef client into our instance with help from knife!</p>
+
+<p><code>bash
+[msheiny:~/git/chef-repo] ± knife bootstrap chefclient.sheiny.com -x vagrant -P vagrant -N chefclient --sudo
+</code>
+The third argument is the fqdn of the node, <code>-x</code> and <code>-P</code> are the username/password, and <code>-N</code> is the name we want to refer to our new client by.</p>
+
+<p>After that is done we can confirm with <code>client list</code> and we should see <code>chefclient</code> as part of the list:
+<code>bash
+[msheiny:~/git/chef-repo] ± knife client list
+</code></p>
+
+<h2>Resources</h2>
+
+<ul>
+<li><a href="http://www.getchef.com/chef/install/">Chef Install Site</a></li>
+<li><a href="https://www.digitalocean.com/community/articles/how-to-install-a-chef-server-workstation-and-client-on-ubuntu-vps-instances">Third-party Chef Install Tutorial</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

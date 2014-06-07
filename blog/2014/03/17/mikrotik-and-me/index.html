@@ -1,0 +1,425 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Mikrotik and Me - The Sheinburger</title>
+  <meta name="author" content="Mike Sheinberg">
+
+  
+  <meta name="description" content="So I stumbled across a company out of Latvia that produces a line of hardware routers
+and manages their own Linux-based network operating system. &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://msheiny.github.io/blog/2014/03/17/mikrotik-and-me">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="The Sheinburger" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Gloria+Hallelujah' rel='stylesheet' type='text/css'>
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">The Sheinburger</a></h1>
+  
+    <h2>Self-serving content since 2014</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:msheiny.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Mikrotik and Me</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-17T17:11:24-04:00" pubdate data-updated="true">Mar 17<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><img class="left" src="/images/mikrotik_rtrb_750.jpg" width="400"></p>
+
+<p>So I stumbled across a company out of Latvia that produces a line of hardware routers
+and manages their own Linux-based network operating system. The hardware is called
+<code>Routerboard</code> and the operating system is <code>RouterOS</code>. I needed a cheap but feature-filled home router and ended up picking up the RB750GL off Amazon. I can’t speak to performance or stability yet but so far I’m very happy with the extensibility and feature-set of RouterOS. I’ve always run dd-wrt in the past but have been turned off by the lack of documentation and the hoops you have to jump through to do more advanced tasks outside the web interface.
+ssh logins</p>
+
+<h2>SSH key logins</h2>
+
+<p>You must utilize DSA ssh keys if you’d like to use ssh key authentication. From a linux host use <code>ssh-keygen</code> and the <code>-t</code> argument:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ssh-keygen -t dsa -i .ssh/mikrotik
+</span><span class='line'>scp .ssh/mikrotik.pub $mikrotik_ip:</span></code></pre></td></tr></table></div></figure>
+
+
+<p>on the mikrotik:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>[msheiny@mikrotik] &gt; /user ssh-keys import public-key-file=mikrotik.pub user=msheiny</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>IPv6 with comcast</h2>
+
+<p>Comcast uses <a href="http://tools.ietf.org/html/rfc3633">DHCP-PD</a> to pass along our /64 network prefix. Add a dhcpv6 client to our external interface:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/ipv6 dhcp-client
+</span><span class='line'>add add-default-route=yes interface=ether1-gateway pool-name=comcast</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and then add firewall rules:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/ipv6 firewall filter
+</span><span class='line'>add chain=input connection-state=established
+</span><span class='line'>add chain=input connection-state=related
+</span><span class='line'>add chain=input dst-port=546 in-interface=ether1-gateway protocol=udp
+</span><span class='line'>add chain=input in-interface=ether1-gateway protocol=icmpv6
+</span><span class='line'>add action=drop chain=input in-interface=ether1-gateway
+</span><span class='line'>add chain=forward connection-state=established
+</span><span class='line'>add chain=forward connection-state=related
+</span><span class='line'>add action=drop chain=forward connection-state=invalid</span></code></pre></td></tr></table></div></figure>
+
+
+<p>advertise that route to our internal client ports:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/ipv6 address
+</span><span class='line'>add eui-64=yes from-pool=comcast interface=ether4    </span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Finishing up</h2>
+
+<p>Let’s turn off services we arent using:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/ip firewall service-port
+</span><span class='line'>set ftp disabled=yes
+</span><span class='line'>set tftp disabled=yes
+</span><span class='line'>set irc disabled=yes
+</span><span class='line'>set h323 disabled=yes
+</span><span class='line'>set sip disabled=yes
+</span><span class='line'>set pptp disabled=yes
+</span><span class='line'>/ip hotspot service-port
+</span><span class='line'>set ftp disabled=yes
+</span><span class='line'>/ip service
+</span><span class='line'>set telnet disabled=yes
+</span><span class='line'>set ftp disabled=yes
+</span><span class='line'>set api disabled=yes
+</span><span class='line'>set winbox disabled=yes
+</span><span class='line'>set api-ssl disabled=yes</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Configure ntp:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/system clock
+</span><span class='line'>set time-zone-name=America/New_York
+</span><span class='line'>
+</span><span class='line'>/system ntp client
+</span><span class='line'>set enabled=yes mode=unicast primary-ntp=x.x.x.x secondary-ntp=y.y.y.y</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hostname:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/system identity
+</span><span class='line'>set name=homerouter</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ToDo</p>
+
+<ul>
+<li>Get a cron job going updating a dynamic dns entry. So far I’ve had success using the following code that is specific for no-ip.com that I found on the Mikrotik script repository:</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>##############Script Settings##################
+</span><span class='line'>
+</span><span class='line'>:local NOIPUser "sheiny"
+</span><span class='line'>:local NOIPPass "asdasdzxdzsdfsfdsfxf"
+</span><span class='line'>:local WANInter "ether1-gateway"
+</span><span class='line'>:local NOIPDomain "myhost"
+</span><span class='line'>
+</span><span class='line'>###############################################
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>:local IpCurrent [/ip address get [find interface=$WANInter] address];
+</span><span class='line'>:for i from=( [:len $IpCurrent] - 1) to=0 do={
+</span><span class='line'>    :if ( [:pick $IpCurrent $i] = "/") do={
+</span><span class='line'>     :local NewIP [:pick $IpCurrent 0 $i];
+</span><span class='line'>     :if ([:resolve $NOIPDomain] != $NewIP) do={
+</span><span class='line'>       /tool fetch mode=https user=$NOIPUser password=$NOIPPass url="https://dynupdate.no-ip.com/nic/update\3Fhostname=$NOIPDomain&myip=$NewIP" keep-result=no
+</span><span class='line'>       :log info "NO-IP Update: $NOIPDomain - $NewIP"
+</span><span class='line'>      }
+</span><span class='line'>    }
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>    Get a VPN up and running (or maybe just utilize SSH with keys + forwarding)
+</span><span class='line'>    Script to email daily digest of network activity and router status changes
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mike Sheinberg</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-17T17:11:24-04:00" pubdate data-updated="true">Mar 17<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ipv6/'>ipv6</a>, <a class='category' href='/blog/categories/mikrotik/'>mikrotik</a>, <a class='category' href='/blog/categories/networking/'>networking</a>, <a class='category' href='/blog/categories/router/'>router</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://msheiny.github.io/blog/2014/03/17/mikrotik-and-me/" data-via="" data-counturl="http://msheiny.github.io/blog/2014/03/17/mikrotik-and-me/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/03/06/freeradius-and-google-pam/" title="Previous Post: freeradius and google authenticator">&laquo; freeradius and google authenticator</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/05/04/a-chef-primer/" title="Next Post: a Chef Primer">a Chef Primer &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/19/okay-more-chef-notes/">Chef Recipes Expanded</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/05/jenkins-primer/">Jenkins Primer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/chef-getting-started-with-recipes/">Chef - Getting Started With Recipes</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/a-chef-primer/">A Chef Primer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/17/mikrotik-and-me/">Mikrotik and Me</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/msheiny">@msheiny</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'msheiny',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Mike Sheinberg -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

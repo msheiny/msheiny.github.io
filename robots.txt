@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: 
+
+Sitemap: http://msheiny.github.io/sitemap.xml 

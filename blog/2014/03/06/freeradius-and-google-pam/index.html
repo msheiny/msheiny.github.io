@@ -1,0 +1,438 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Freeradius and Google Authenticator - The Sheinburger</title>
+  <meta name="author" content="Mike Sheinberg">
+
+  
+  <meta name="description" content="Caveat freeradius is a bit baffling to get a full grasp on and I don&rsquo;t pretend to be an expert. My goals were two-fold &ndash; radius users &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://msheiny.github.io/blog/2014/03/06/freeradius-and-google-pam">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="The Sheinburger" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Gloria+Hallelujah' rel='stylesheet' type='text/css'>
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">The Sheinburger</a></h1>
+  
+    <h2>Self-serving content since 2014</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:msheiny.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Freeradius and Google Authenticator</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-06T18:56:20-05:00" pubdate data-updated="true">Mar 6<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h2>Caveat</h2>
+
+<p>freeradius is a bit baffling to get a full grasp on and I don&rsquo;t pretend to be an expert. My goals were two-fold &ndash; radius users authenticate against pam (<code>rlm_pam</code>) with two-factor google authenticator and ensure freeradius doesn&rsquo;t have to run as root.</p>
+
+<p>Logistically, The two-factor code will come in AFTER (no space, enter, etc) the user&rsquo;s password like:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>user: &lt;username&gt;
+</span><span class='line'>password: &lt;password&gt;&lt;googlecode&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Radius Files</h2>
+
+<p>By default, freeradius config files will be found in <code>/etc/raddb</code>. From the start you will be concerned with:</p>
+
+<ul>
+<li><code>radiusd.conf</code> &ndash; lists all the relevant paths of radius files. sets radiusd permissions</li>
+<li><code>sites-enabled/default</code> &ndash; default site configuration parameters specified. Lists enabled modules for aaa</li>
+<li><code>clients.conf</code> &ndash; This file defines radius clients by IP or subnet that are allowed to connect, client specific parameters, and where you will indicate the secret shared key.</li>
+<li><code>users</code> &ndash; You can list users in this file if you want and define parameters of groups. This is an optional file technically which is enabled by default thanks to the &lsquo;files&rsquo; parameter listed in the &lsquo;default&rsquo; sites file.</li>
+<li><code>/etc/pam.d/radiusd</code> &ndash; pam parameters to run for the radiusd rlm_pam module</li>
+</ul>
+
+
+<p>In <code>radiusd.conf</code>, modified the following under the authenticate section (used to be pap):</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Auth-Type PAP {
+</span><span class='line'>      pam
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So, I wanted to allow users on the local system that are in the <code>switchuser</code> group and also a user named rancid. Everyone else should fail out. My rancid user is used for scraping configs and doesn&rsquo;t have full command rights. Part of this setup involves configuring the privilege level commands on the IOS device itself. I set some system specific Appended the following to <code>users</code>:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># 
+</span><span class='line'># Allow Unix users that are in the switchuser group
+</span><span class='line'>#
+</span><span class='line'>DEFAULT Group == 'switchuser' 
+</span><span class='line'>    foundry-privilege-level := 0,
+</span><span class='line'>    foundry-command-string := "*",
+</span><span class='line'>    cisco-avpair = "shell:priv-lvl=4",
+</span><span class='line'>
+</span><span class='line'>#
+</span><span class='line'># Rancid user is only allowed show run commands
+</span><span class='line'>#
+</span><span class='line'>rancid
+</span><span class='line'>    foundry-command-string := "show running-config ;show conf*; show vlan",
+</span><span class='line'>    foundry-privilege-level := 5,
+</span><span class='line'>    foundry-command-exception-flag := 0,
+</span><span class='line'>    cisco-avpair = "shell:priv-lvl=4",
+</span><span class='line'>
+</span><span class='line'># On no match, the user is denied access.
+</span><span class='line'>DEFAULT Auth-Type := REJECT
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Google Authenticator Pam &ldquo;Hack&rdquo;</h2>
+
+<p>I use the term &ldquo;hack&rdquo; very very loosely. I merely just commented out a line really. Okay, 4 lines. <em>ahem</em> Anyways&hellip;</p>
+
+<p>If you run radiusd without root permissions, you&rsquo;ll have problems trying to use the google auth pam module. This is because it wants to change uid/gid to the incoming user by default. I did three things to get around this:</p>
+
+<ol>
+<li>I set the <code>secret=/var/run/user/${USER}/.google_authenticator</code> parameter. Will need all users to copy their files here and chown this folder to the same user that will be running radiusd</li>
+<li>I forced the user with the <code>user=radiusd</code></li>
+<li>I re-compiled the source for the google pam module and commented out a fail value when it tries to change group id. (see below)</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>*** pam_google_authenticator.c  2012-05-14 21:32:27.000000000 -0400
+</span><span class='line'>--- /tmp/libpam-google-authenticator-1.0/pam_google_authenticator.c     2014-03-05 13:17:33.777588058 -0500
+</span><span class='line'>***************
+</span><span class='line'>*** 311,320 ****
+</span><span class='line'>        // Inform the caller that we were unsuccessful in resetting the uid.
+</span><span class='line'>        *old_uid = uid_o;
+</span><span class='line'>      }
+</span><span class='line'>!     log_message(LOG_ERR, pamh,
+</span><span class='line'>!                 "Failed to change group id for user \"%s\" to %d", username,
+</span><span class='line'>!                 (int)gid);
+</span><span class='line'>!     return -1;
+</span><span class='line'>    }
+</span><span class='line'>  
+</span><span class='line'>    *old_uid = uid_o;
+</span><span class='line'>--- 311,325 ----
+</span><span class='line'>        // Inform the caller that we were unsuccessful in resetting the uid.
+</span><span class='line'>        *old_uid = uid_o;
+</span><span class='line'>      }
+</span><span class='line'>!     //      In order to run RADIUS without root permissions, I commented
+</span><span class='line'>!     //      out the failure on setgroup and logging code below. This also
+</span><span class='line'>!     //      required me to feed the 'user=' option in the pam radius file.
+</span><span class='line'>!     //
+</span><span class='line'>!     //log_message(LOG_ERR, pamh,
+</span><span class='line'>!     //            "Failed to change group id for user \"%s\" to %d", username,
+</span><span class='line'>!     //            (int)gid);
+</span><span class='line'>!     // return -1;
+</span><span class='line'>    }
+</span><span class='line'>
+</span><span class='line'>    *old_uid = uid_o;</span></code></pre></td></tr></table></div></figure>
+
+
+<p>My <code>/etc/pam.d/radiusd</code> now looks like:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#%PAM-1.0
+</span><span class='line'>auth     required       pam_google_authenticator.so forward_pass secret=/var/run/user/${USER}/.google_authenticator user=radiusd
+</span><span class='line'>auth     requisite      pam_nologin.so
+</span><span class='line'>auth     include        common-auth
+</span><span class='line'>account  include        common-account
+</span><span class='line'>password include        common-password
+</span><span class='line'>session  include        common-session
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>forward_pass</code> produces the functionality explained at the top (google code follows password).</p>
+
+<h2>Fire!</h2>
+
+<p>Start up the server in debug mode with:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>msheiny:~<span class="o">]</span> <span class="nv">$ </span>radiusd -X
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Start firing packets at your instance with:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="o">[</span>msheiny:~<span class="o">]</span> <span class="nv">$ </span>radtest msheiny <span class="o">{</span>password<span class="o">}{</span>google_code<span class="o">}</span> localhost <span class="o">{</span>port<span class="o">}</span> <span class="o">{</span>shared_key<span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><code>shared_key</code> is a value found in the clients file</li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mike Sheinberg</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-06T18:56:20-05:00" pubdate data-updated="true">Mar 6<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/freeradius/'>freeradius</a>, <a class='category' href='/blog/categories/google/'>google</a>, <a class='category' href='/blog/categories/two-factor/'>two-factor</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://msheiny.github.io/blog/2014/03/06/freeradius-and-google-pam/" data-via="" data-counturl="http://msheiny.github.io/blog/2014/03/06/freeradius-and-google-pam/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/03/17/mikrotik-and-me/" title="Next Post: Mikrotik and Me">Mikrotik and Me &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/19/okay-more-chef-notes/">Chef Recipes Expanded</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/05/jenkins-primer/">Jenkins Primer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/chef-getting-started-with-recipes/">Chef - Getting Started With Recipes</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/a-chef-primer/">A Chef Primer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/17/mikrotik-and-me/">Mikrotik and Me</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/msheiny">@msheiny</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'msheiny',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Mike Sheinberg -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

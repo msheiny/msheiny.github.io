@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Mikrotik | The Sheinburger]]></title>
+  <link href="http://msheiny.github.io/blog/categories/mikrotik/atom.xml" rel="self"/>
+  <link href="http://msheiny.github.io/"/>
+  <updated>2014-06-07T16:07:33-04:00</updated>
+  <id>http://msheiny.github.io/</id>
+  <author>
+    <name><![CDATA[Mike Sheinberg]]></name>
+    <email><![CDATA[m.sheiny@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Mikrotik and Me]]></title>
+    <link href="http://msheiny.github.io/blog/2014/03/17/mikrotik-and-me/"/>
+    <updated>2014-03-17T17:11:24-04:00</updated>
+    <id>http://msheiny.github.io/blog/2014/03/17/mikrotik-and-me</id>
+    <content type="html"><![CDATA[<p><img class="left" src="/images/mikrotik_rtrb_750.jpg" width="400"></p>
+
+<p>So I stumbled across a company out of Latvia that produces a line of hardware routers
+and manages their own Linux-based network operating system. The hardware is called
+<code>Routerboard</code> and the operating system is <code>RouterOS</code>. I needed a cheap but feature-filled home router and ended up picking up the RB750GL off Amazon. I can’t speak to performance or stability yet but so far I’m very happy with the extensibility and feature-set of RouterOS. I’ve always run dd-wrt in the past but have been turned off by the lack of documentation and the hoops you have to jump through to do more advanced tasks outside the web interface.
+ssh logins</p>
+
+<h2>SSH key logins</h2>
+
+<p>You must utilize DSA ssh keys if you’d like to use ssh key authentication. From a linux host use <code>ssh-keygen</code> and the <code>-t</code> argument:</p>
+
+<p><code>
+ssh-keygen -t dsa -i .ssh/mikrotik
+scp .ssh/mikrotik.pub $mikrotik_ip:
+</code></p>
+
+<p>on the mikrotik:</p>
+
+<p><code>
+[msheiny@mikrotik] &gt; /user ssh-keys import public-key-file=mikrotik.pub user=msheiny
+</code></p>
+
+<h2>IPv6 with comcast</h2>
+
+<p>Comcast uses <a href="http://tools.ietf.org/html/rfc3633">DHCP-PD</a> to pass along our /64 network prefix. Add a dhcpv6 client to our external interface:</p>
+
+<p><code>
+/ipv6 dhcp-client
+add add-default-route=yes interface=ether1-gateway pool-name=comcast
+</code></p>
+
+<p>and then add firewall rules:</p>
+
+<p><code>
+/ipv6 firewall filter
+add chain=input connection-state=established
+add chain=input connection-state=related
+add chain=input dst-port=546 in-interface=ether1-gateway protocol=udp
+add chain=input in-interface=ether1-gateway protocol=icmpv6
+add action=drop chain=input in-interface=ether1-gateway
+add chain=forward connection-state=established
+add chain=forward connection-state=related
+add action=drop chain=forward connection-state=invalid
+</code></p>
+
+<p>advertise that route to our internal client ports:</p>
+
+<p><code>
+/ipv6 address
+add eui-64=yes from-pool=comcast interface=ether4    
+</code></p>
+
+<h2>Finishing up</h2>
+
+<p>Let’s turn off services we arent using:</p>
+
+<p><code>
+/ip firewall service-port
+set ftp disabled=yes
+set tftp disabled=yes
+set irc disabled=yes
+set h323 disabled=yes
+set sip disabled=yes
+set pptp disabled=yes
+/ip hotspot service-port
+set ftp disabled=yes
+/ip service
+set telnet disabled=yes
+set ftp disabled=yes
+set api disabled=yes
+set winbox disabled=yes
+set api-ssl disabled=yes
+</code></p>
+
+<p>Configure ntp:</p>
+
+<p>```
+/system clock
+set time-zone-name=America/New_York</p>
+
+<p>/system ntp client
+set enabled=yes mode=unicast primary-ntp=x.x.x.x secondary-ntp=y.y.y.y
+```</p>
+
+<p>Hostname:</p>
+
+<p><code>
+/system identity
+set name=homerouter
+</code></p>
+
+<p>ToDo</p>
+
+<ul>
+<li>Get a cron job going updating a dynamic dns entry. So far I’ve had success using the following code that is specific for no-ip.com that I found on the Mikrotik script repository:</li>
+</ul>
+
+
+<p>```</p>
+
+<h6>########Script Settings</h6>
+
+<p>:local NOIPUser &ldquo;sheiny&rdquo;
+:local NOIPPass &ldquo;asdasdzxdzsdfsfdsfxf&rdquo;
+:local WANInter &ldquo;ether1-gateway&rdquo;
+:local NOIPDomain &ldquo;myhost&rdquo;</p>
+
+<h6>#</h6>
+
+<p>:local IpCurrent [/ip address get [find interface=$WANInter] address];
+:for i from=( [:len $IpCurrent] &ndash; 1) to=0 do={</p>
+
+<pre><code>:if ( [:pick $IpCurrent $i] = "/") do={
+ :local NewIP [:pick $IpCurrent 0 $i];
+ :if ([:resolve $NOIPDomain] != $NewIP) do={
+   /tool fetch mode=https user=$NOIPUser password=$NOIPPass url="https://dynupdate.no-ip.com/nic/update\3Fhostname=$NOIPDomain&amp;myip=$NewIP" keep-result=no
+   :log info "NO-IP Update: $NOIPDomain - $NewIP"
+  }
+}
+</code></pre>
+
+<p>}</p>
+
+<pre><code>Get a VPN up and running (or maybe just utilize SSH with keys + forwarding)
+Script to email daily digest of network activity and router status changes
+</code></pre>
+
+<p>```</p>
+]]></content>
+  </entry>
+  
+</feed>

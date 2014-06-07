@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Two-factor | The Sheinburger]]></title>
+  <link href="http://msheiny.github.io/blog/categories/two-factor/atom.xml" rel="self"/>
+  <link href="http://msheiny.github.io/"/>
+  <updated>2014-06-07T16:07:33-04:00</updated>
+  <id>http://msheiny.github.io/</id>
+  <author>
+    <name><![CDATA[Mike Sheinberg]]></name>
+    <email><![CDATA[m.sheiny@gmail.com]]></email>
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Freeradius and Google Authenticator]]></title>
+    <link href="http://msheiny.github.io/blog/2014/03/06/freeradius-and-google-pam/"/>
+    <updated>2014-03-06T18:56:20-05:00</updated>
+    <id>http://msheiny.github.io/blog/2014/03/06/freeradius-and-google-pam</id>
+    <content type="html"><![CDATA[<h2>Caveat</h2>
+
+<p>freeradius is a bit baffling to get a full grasp on and I don&rsquo;t pretend to be an expert. My goals were two-fold &ndash; radius users authenticate against pam (<code>rlm_pam</code>) with two-factor google authenticator and ensure freeradius doesn&rsquo;t have to run as root.</p>
+
+<p>Logistically, The two-factor code will come in AFTER (no space, enter, etc) the user&rsquo;s password like:</p>
+
+<p>```</p>
+
+<pre><code>user: &lt;username&gt;
+password: &lt;password&gt;&lt;googlecode&gt;
+</code></pre>
+
+<p>```</p>
+
+<h2>Radius Files</h2>
+
+<p>By default, freeradius config files will be found in <code>/etc/raddb</code>. From the start you will be concerned with:</p>
+
+<ul>
+<li><code>radiusd.conf</code> &ndash; lists all the relevant paths of radius files. sets radiusd permissions</li>
+<li><code>sites-enabled/default</code> &ndash; default site configuration parameters specified. Lists enabled modules for aaa</li>
+<li><code>clients.conf</code> &ndash; This file defines radius clients by IP or subnet that are allowed to connect, client specific parameters, and where you will indicate the secret shared key.</li>
+<li><code>users</code> &ndash; You can list users in this file if you want and define parameters of groups. This is an optional file technically which is enabled by default thanks to the &lsquo;files&rsquo; parameter listed in the &lsquo;default&rsquo; sites file.</li>
+<li><code>/etc/pam.d/radiusd</code> &ndash; pam parameters to run for the radiusd rlm_pam module</li>
+</ul>
+
+
+<p>In <code>radiusd.conf</code>, modified the following under the authenticate section (used to be pap):</p>
+
+<p>```</p>
+
+<pre><code>Auth-Type PAP {
+      pam
+}
+</code></pre>
+
+<p>```</p>
+
+<p>So, I wanted to allow users on the local system that are in the <code>switchuser</code> group and also a user named rancid. Everyone else should fail out. My rancid user is used for scraping configs and doesn&rsquo;t have full command rights. Part of this setup involves configuring the privilege level commands on the IOS device itself. I set some system specific Appended the following to <code>users</code>:</p>
+
+<p>```</p>
+
+<h1></h1>
+
+<h1>Allow Unix users that are in the switchuser group</h1>
+
+<p>#
+DEFAULT Group == &lsquo;switchuser&rsquo;</p>
+
+<pre><code>foundry-privilege-level := 0,
+foundry-command-string := "*",
+cisco-avpair = "shell:priv-lvl=4",
+</code></pre>
+
+<p>#</p>
+
+<h1>Rancid user is only allowed show run commands</h1>
+
+<p>#
+rancid</p>
+
+<pre><code>foundry-command-string := "show running-config ;show conf*; show vlan",
+foundry-privilege-level := 5,
+foundry-command-exception-flag := 0,
+cisco-avpair = "shell:priv-lvl=4",
+</code></pre>
+
+<h1>On no match, the user is denied access.</h1>
+
+<p>DEFAULT Auth-Type := REJECT</p>
+
+<p>```</p>
+
+<h2>Google Authenticator Pam &ldquo;Hack&rdquo;</h2>
+
+<p>I use the term &ldquo;hack&rdquo; very very loosely. I merely just commented out a line really. Okay, 4 lines. <em>ahem</em> Anyways&hellip;</p>
+
+<p>If you run radiusd without root permissions, you&rsquo;ll have problems trying to use the google auth pam module. This is because it wants to change uid/gid to the incoming user by default. I did three things to get around this:</p>
+
+<ol>
+<li>I set the <code>secret=/var/run/user/${USER}/.google_authenticator</code> parameter. Will need all users to copy their files here and chown this folder to the same user that will be running radiusd</li>
+<li>I forced the user with the <code>user=radiusd</code></li>
+<li>I re-compiled the source for the google pam module and commented out a fail value when it tries to change group id. (see below)</li>
+</ol>
+
+
+<p>```
+*** pam_google_authenticator.c  2012-05-14 21:32:27.000000000 -0400
+&mdash;&ndash; /tmp/libpam-google-authenticator-1.0/pam_google_authenticator.c     2014-03-05 13:17:33.777588058 -0500</p>
+
+<hr />
+
+<p><strong>* 311,320 </strong>**</p>
+
+<pre><code>    // Inform the caller that we were unsuccessful in resetting the uid.
+    *old_uid = uid_o;
+  }
+</code></pre>
+
+<p>!     log_message(LOG_ERR, pamh,
+!                 &ldquo;Failed to change group id for user \&rdquo;%s\&ldquo; to %d&rdquo;, username,
+!                 (int)gid);
+!     return -1;</p>
+
+<pre><code>}
+
+*old_uid = uid_o;
+</code></pre>
+
+<p>&mdash;&ndash; 311,325 &mdash;&mdash;</p>
+
+<pre><code>    // Inform the caller that we were unsuccessful in resetting the uid.
+    *old_uid = uid_o;
+  }
+</code></pre>
+
+<p>!     //      In order to run RADIUS without root permissions, I commented
+!     //      out the failure on setgroup and logging code below. This also
+!     //      required me to feed the &lsquo;user=&rsquo; option in the pam radius file.
+!     //
+!     //log_message(LOG_ERR, pamh,
+!     //            &ldquo;Failed to change group id for user \&rdquo;%s\&ldquo; to %d&rdquo;, username,
+!     //            (int)gid);
+!     // return -1;</p>
+
+<pre><code>}
+
+*old_uid = uid_o;
+</code></pre>
+
+<p>```</p>
+
+<p>My <code>/etc/pam.d/radiusd</code> now looks like:</p>
+
+<p>```</p>
+
+<h1>%PAM-1.0</h1>
+
+<p>auth     required       pam_google_authenticator.so forward_pass secret=/var/run/user/${USER}/.google_authenticator user=radiusd
+auth     requisite      pam_nologin.so
+auth     include        common-auth
+account  include        common-account
+password include        common-password
+session  include        common-session</p>
+
+<p>```</p>
+
+<p><code>forward_pass</code> produces the functionality explained at the top (google code follows password).</p>
+
+<h2>Fire!</h2>
+
+<p>Start up the server in debug mode with:</p>
+
+<p><code>bash
+[msheiny:~] $ radiusd -X
+</code></p>
+
+<p>Start firing packets at your instance with:
+<code>bash
+[msheiny:~] $ radtest msheiny {password}{google_code} localhost {port} {shared_key}
+</code>
+* <code>shared_key</code> is a value found in the clients file</p>
+]]></content>
+  </entry>
+  
+</feed>

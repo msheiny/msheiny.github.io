@@ -1,0 +1,442 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Chef - Getting Started With Recipes - The Sheinburger</title>
+  <meta name="author" content="Mike Sheinberg">
+
+  
+  <meta name="description" content="Check out my primer chef document for how to initially configure your chef test environment with vagrant. This document assumes you are starting &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="The Sheinburger" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Gloria+Hallelujah' rel='stylesheet' type='text/css'>
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">The Sheinburger</a></h1>
+  
+    <h2>Self-serving content since 2014</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:msheiny.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Chef - Getting Started With Recipes</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-04T17:20:04-04:00" pubdate data-updated="true">May 4<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><img class="center" src="/images/recipe_book.jpg"></p>
+
+<p>Check out my primer chef document for how to initially configure your chef test environment with vagrant. This document assumes you are starting from there.</p>
+
+<h1>Apache Tutorial Cookbook</h1>
+
+<p>These are my expanded notes from one of the official <a href="https://learnchef.opscode.com/tutorials/create-your-first-cookbook/">docs</a>. Before we proceed, let&rsquo;s take a quick look at the default <a href="https://github.com/opscode/chef-repo">chef-repo</a> tree:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>chef-repo
+</span><span class='line'>├── .chef
+</span><span class='line'>├── certificates
+</span><span class='line'>├── config
+</span><span class='line'>├── cookbooks
+</span><span class='line'>├── data_bags
+</span><span class='line'>├── environments
+</span><span class='line'>└── roles</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When you are inside that directory and have already configured your knife config file, you can start a cookbook with:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>knife cookbook create apache_tutorial</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s see how this changes our workspace:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>chef-repo
+</span><span class='line'>└── cookbooks
+</span><span class='line'>        └── apache_tutorial
+</span><span class='line'>            ├── attributes
+</span><span class='line'>            ├── CHANGELOG.md
+</span><span class='line'>            ├── definitions
+</span><span class='line'>            ├── files
+</span><span class='line'>            │   └── default
+</span><span class='line'>            ├── libraries
+</span><span class='line'>            ├── metadata.rb
+</span><span class='line'>            ├── providers
+</span><span class='line'>            ├── README.md
+</span><span class='line'>            ├── recipes
+</span><span class='line'>            │   └── default.rb
+</span><span class='line'>            ├── resources
+</span><span class='line'>            └── templates
+</span><span class='line'>                └── default</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Make the following modifications:</p>
+
+<p><code>recipes/default.rb</code>:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>package "apache2" do
+</span><span class='line'>  action :install
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>service "apache2" do
+</span><span class='line'>  action [ :enable, :start ]
+</span><span class='line'>end
+</span><span class='line'>
+</span><span class='line'>cookbook_file "/var/www/index.html" do
+</span><span class='line'>  source "index.html"
+</span><span class='line'>  mode "0644"
+</span><span class='line'>end</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>files/default/index.html</code>:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;html&gt;
+</span><span class='line'>&lt;body&gt;
+</span><span class='line'>  &lt;h1&gt;Hello, world!&lt;/h1&gt;
+</span><span class='line'>&lt;/body&gt;
+</span><span class='line'>&lt;/html&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Upload that recipe to the chef server:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ knife cookbook upload apache_tutorial</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Run List</h1>
+
+<p>Now we need to add that recipe to our node&rsquo;s <code>run list</code>. To verify the run list of a node:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ knife node show chefclient
+</span><span class='line'>Node Name:   chefclient
+</span><span class='line'>Environment: _default
+</span><span class='line'>FQDN:        ChefClient
+</span><span class='line'>IP:          10.0.2.15
+</span><span class='line'>Run List:    
+</span><span class='line'>Roles:       
+</span><span class='line'>Recipes:     
+</span><span class='line'>Platform:    ubuntu 12.04
+</span><span class='line'>Tags:</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s add our apache recipe to that node&rsquo;s runlist and confirm:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife node run_list add chefclient apache_tutorial
+</span><span class='line'>chefclient:
+</span><span class='line'>  run_list: recipe<span class="o">[</span>apache_tutorial<span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>knife node show chefclient
+</span><span class='line'>Node Name:   chefclient
+</span><span class='line'>Environment: _default
+</span><span class='line'>FQDN:        ChefClient
+</span><span class='line'>IP:          10.0.2.15
+</span><span class='line'>Run List:    recipe<span class="o">[</span>apache_tutorial<span class="o">]</span>
+</span><span class='line'>Roles:
+</span><span class='line'>Recipes:
+</span><span class='line'>Platform:    ubuntu 12.04
+</span><span class='line'>Tags:
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To force our chefclient to run this recipe and check into our chef server:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife ssh <span class="s2">&quot;name:chefclient&quot;</span> -x vagrant -P vagrant <span class="s2">&quot;sudo chef-client&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>References</h1>
+
+<ul>
+<li><a href="http://docs.opscode.com/chef/resources.html">Chef Resources/Providers Reference</a></li>
+<li><a href="https://learnchef.opscode.com/tutorials/create-your-first-cookbook/">Chef Tutorial</a></li>
+<li><a href="http://docs.opscode.com/essentials_search.html">Chef Query</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mike Sheinberg</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-04T17:20:04-04:00" pubdate data-updated="true">May 4<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/apache/'>apache</a>, <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/knife/'>knife</a>, <a class='category' href='/blog/categories/recipe/'>recipe</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes/" data-via="" data-counturl="http://msheiny.github.io/blog/2014/05/04/chef-getting-started-with-recipes/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/05/04/a-chef-primer/" title="Previous Post: a Chef Primer">&laquo; a Chef Primer</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/05/05/jenkins-primer/" title="Next Post: Jenkins Primer">Jenkins Primer &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/19/okay-more-chef-notes/">Chef Recipes Expanded</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/05/jenkins-primer/">Jenkins Primer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/chef-getting-started-with-recipes/">Chef - Getting Started With Recipes</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/a-chef-primer/">A Chef Primer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/17/mikrotik-and-me/">Mikrotik and Me</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/msheiny">@msheiny</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'msheiny',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Mike Sheinberg -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

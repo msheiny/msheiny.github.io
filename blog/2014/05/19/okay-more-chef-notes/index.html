@@ -1,0 +1,712 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Chef Recipes Expanded - The Sheinburger</title>
+  <meta name="author" content="Mike Sheinberg">
+
+  
+  <meta name="description" content="So here are some chef notes. I watched some videos, read some documentation and
+then I wrote some notes. I should probably find a new hobby. The &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://msheiny.github.io/blog/2014/05/19/okay-more-chef-notes">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="The Sheinburger" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href='http://fonts.googleapis.com/css?family=Gloria+Hallelujah' rel='stylesheet' type='text/css'>
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">The Sheinburger</a></h1>
+  
+    <h2>Self-serving content since 2014</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:msheiny.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Chef Recipes Expanded</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-19T18:19:18-04:00" pubdate data-updated="true">May 19<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><img class="center" src="/images/chef_on_fire.jpg"></p>
+
+<p>So here are some chef notes. I watched some videos, read some documentation and
+then I wrote some notes. I should probably find a new hobby.</p>
+
+<h1>The Chef-client run process</h1>
+
+<p>This <a href="http://docs.opscode.com/essentials_nodes_chef_run.html">page</a> provides a good starting point and diagram. I extracted the high-level steps as follows:</p>
+
+<ol>
+<li><em>Get configuration data</em> &ndash; Node gets process configuration data from it&rsquo;s own <code>client.rb</code> and from <code>ohai</code></li>
+<li><em>authentication</em> &ndash; client authenticates to the chef server using RSA keys and node name. On first run, the chef-validator will be used to generate the RSA private key.</li>
+<li><em>get, rebuild node object</em> &ndash; client pulls down node object from server and rebuilds it.</li>
+<li><em>expand the run-list</em> &ndash; chef client expands the full run-list from the latest node object that should be applied and in what order.</li>
+<li><em>sync cookbooks</em> &ndash; asks the chef for required cookbook files and pulls down any changed and new files (compared to whats in cache from last run)</li>
+<li><em>Reset node attributes</em> &ndash; attributes in rebuilt node object are reset and refilled with attributes from files, environments, roles, and <code>ohai</code>.</li>
+<li><em>Compile resource collection</em> &ndash; determine all resources that will be needed to process the run-list</li>
+<li><em>Converge the node</em> &ndash; client configures the system based on info collected</li>
+<li><em>Update the node object, process exception and report handlers</em> &ndash; client updates node object on server and will go through any exception and report handling as necessary.</li>
+</ol>
+
+
+<h1>Authentication and Authorization</h1>
+
+<p>Communication done via Chef Server API via REST. The server requires authentication via public keys. Public keys stored on chef server, private keys on nodes. The <code>chef-client</code> and <code>knife</code> tools all use the Chef Server API and will sign a special group of HTTP headers with the private key.</p>
+
+<p>During the first <code>chef-client</code> run, there is no private key so the chef-client will try the private key assigned to the chef-validator. Assuming that goes successfully, the chef-client will obtain a <code>client.pem</code> private key for future authentication.</p>
+
+<p>The chef-client authentication workflow:</p>
+
+<ol>
+<li>Look in <code>/etc/chef/client.pem</code> for a node private key</li>
+<li>If that doesn&rsquo;t work, check the validator in <code>/etc/chef/validation.pem</code></li>
+</ol>
+
+
+<p>During an initial knife bootstrap, knife will copy the validation pem over to the node to do an initial chef-client run.</p>
+
+<h1>Compile and Execute</h1>
+
+<p>This stage iterating through our run list resources, collecting that into a list, and then iterating over that on the client to determine next action. Chef client will compare to see if the resource is in the appropriate state. If it is already there, no action is taken. Otherwise, the client will work to put it in the desired state.</p>
+
+<h1>Node Object</h1>
+
+<ul>
+<li>Any machine configured to be maintained by Chef</li>
+<li>Node object is always available to you from within a recipe</li>
+<li><p>Each node must have a unique name within an organization. Chef defaults to the FQDN.</p></li>
+<li><p>Nodes are made up of attributes</p>
+
+<ul>
+<li>Many are discovered automatically (<code>ohai</code>)</li>
+<li>Other objects in Chef can add Node attributes (cookbooks, roles/environments, recipes, attribute files)</li>
+<li>Nodes are stored and indexed on the Chef server</li>
+</ul>
+</li>
+</ul>
+
+
+<p>You can quickly get various attribute data from your node through <code>knife</code> or <code>ohai</code></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># From the chef node directly</span>
+</span><span class='line'><span class="nv">$ </span>sudo ohai
+</span><span class='line'>
+</span><span class='line'><span class="c"># Or from the knife output</span>
+</span><span class='line'><span class="nv">$ </span>knife node list chefclient -l
+</span><span class='line'>
+</span><span class='line'><span class="c"># You can modify formatting options </span>
+</span><span class='line'><span class="c"># $ knife node list {clientname} -F{format}</span>
+</span><span class='line'><span class="nv">$ </span>knife node list chefclient -Fj
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>  <span class="s2">&quot;name&quot;</span>: <span class="s2">&quot;chefclient&quot;</span>,
+</span><span class='line'>  <span class="s2">&quot;chef_environment&quot;</span>: <span class="s2">&quot;_default&quot;</span>,
+</span><span class='line'>  <span class="s2">&quot;run_list&quot;</span>: <span class="o">[</span>
+</span><span class='line'>    <span class="s2">&quot;recipe[apt]&quot;</span>,
+</span><span class='line'>    <span class="s2">&quot;recipe[apache_tutorial]&quot;</span>
+</span><span class='line'>  <span class="o">]</span>,
+</span><span class='line'>  <span class="s2">&quot;normal&quot;</span>: <span class="o">{</span>
+</span><span class='line'>    <span class="s2">&quot;tags&quot;</span>: <span class="o">[</span>
+</span><span class='line'>    <span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># List a specific attribute with -a</span>
+</span><span class='line'><span class="c"># $ knife node list clientname -a {attribute}</span>
+</span><span class='line'><span class="nv">$ </span>knife node list chefclient -a platform_version
+</span><span class='line'>chefclient:
+</span><span class='line'>  platform_version: 12.04
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Knife searches are based on Apache Solr and are in the format:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>key:search_pattern
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>Key = field name found</li>
+<li>search pattern = what will be searched for</li>
+</ul>
+
+
+<p>Examples:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># Wildcard over everything</span>
+</span><span class='line'>knife search node <span class="s1">&#39;*:*&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Search for node running ubuntu</span>
+</span><span class='line'>knife search node <span class="s1">&#39;platform:ubuntu&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Templates and Cross platform</h1>
+
+<p>You can utilize Ruby within the recipe which can help to create dynamic run-lists. Combining variables, loops, case statements, etc. can make for some powerful conditional recipes.</p>
+
+<p>Variable usage:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">package_name</span> <span class="o">=</span> <span class="s2">&quot;apache2&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">node</span><span class="o">[</span><span class="ss">:platform</span><span class="o">]</span> <span class="o">==</span> <span class="s2">&quot;centos&quot;</span>
+</span><span class='line'>    <span class="n">package_name</span> <span class="o">=</span> <span class="s2">&quot;httpd&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">package</span> <span class="n">package_name</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">action</span> <span class="ss">:install</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Case usage:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">package</span> <span class="s2">&quot;apache2&quot;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">case</span> <span class="n">node</span><span class="o">[</span><span class="ss">:platform</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;centos&quot;</span><span class="p">,</span><span class="s2">&quot;redhat&quot;</span><span class="p">,</span><span class="s2">&quot;fedora&quot;</span><span class="p">,</span><span class="s2">&quot;suse&quot;</span>
+</span><span class='line'>    <span class="n">package_name</span> <span class="s2">&quot;httpd&quot;</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;debian&quot;</span><span class="p">,</span><span class="s2">&quot;ubuntu&quot;</span>
+</span><span class='line'>    <span class="n">package_name</span> <span class="s2">&quot;apache2&quot;</span>
+</span><span class='line'>  <span class="k">when</span> <span class="s2">&quot;arch&quot;</span>
+</span><span class='line'>    <span class="n">package_name</span> <span class="s2">&quot;apache&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">action</span> <span class="ss">:install</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Array iteration:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">[</span><span class="s2">&quot;apache2&quot;</span><span class="p">,</span> <span class="s2">&quot;apache2-mpm&quot;</span><span class="o">].</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">p</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">package</span> <span class="nb">p</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can utilize an Embedded Ruby template instead of static files that will be dynamically modified when copied down to our node. These are commonly named with a <code>.erb</code> suffix and can contain ruby code within text. In order to embed ruby we will need to utilize the <code>&lt;%= %&gt;</code> tag:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'><span class="nt">&lt;p&gt;</span>
+</span><span class='line'>    Hello, <span class="err">&lt;</span>%= &quot;my name is #{$ruby}&quot; %&gt;
+</span><span class='line'><span class="nt">&lt;/p&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can feed in a template file with the <code>template</code> resource like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>template &quot;/etc/sudoers&quot; do
+</span><span class='line'>  source &quot;sudoers.erb&quot;
+</span><span class='line'>  mode 0440
+</span><span class='line'>  owner &quot;root&quot;
+</span><span class='line'>  group &quot;root&quot;
+</span><span class='line'>  variables({
+</span><span class='line'>     :sudoers_groups =&gt; node[:authorization][:sudo][:groups],
+</span><span class='line'>     :sudoers_users =&gt; node[:authorization][:sudo][:users]
+</span><span class='line'>  })
+</span><span class='line'>end
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The sudoers.erb file referenced above will need to go into the <code>templates/default/sudoers.erb</code> instead of a typical file path at <code>files/default/sudoers.erb</code>. Chef will try to match up the most specific file by the client platform though and will look in this order:</p>
+
+<p><code>templates/</code>
+1. <code>host-node[:fqdn]/</code>
+2. <code>node[:platform]-node[:platform_version]/</code>
+3. <code>node[:platform]-version_components/</code>
+4. <code>node[:platform]/</code>
+5. <code>default/</code></p>
+
+<p>For example, you could store the file in <code>templates/ubuntu-12.04/sudoers.erb</code>.</p>
+
+<h1>Attributes</h1>
+
+<p><code>Attributes</code> are specific details about a node and can be assigned from one of the following locations:</p>
+
+<ul>
+<li>Nodes (collected by Ohai at the start of each chef-client run)</li>
+<li>Attribute files (in cookbooks)</li>
+<li>Recipes (in cookbooks)</li>
+<li>Environments</li>
+<li>Roles</li>
+</ul>
+
+
+<p>The precedence level that determines which attribute is applied is as follows :</p>
+
+<ol>
+<li>A default attribute located in a cookbook attribute file</li>
+<li>A default attribute located in a recipe</li>
+<li>A default attribute located in an environment</li>
+<li>A default attribute located in role</li>
+<li>A force_default attribute located in a cookbook attribute file</li>
+<li>A force_default attribute located in a recipe</li>
+<li>A normal attribute located in a cookbook attribute file</li>
+<li>A normal attribute located in a recipe</li>
+<li>An override attribute located in a cookbook attribute file</li>
+<li>An override attribute located in a recipe</li>
+<li>An override attribute located in a role</li>
+<li>An override attribute located in an environment</li>
+<li>A force_override attribute located in a cookbook attribute file</li>
+<li>A force_override attribute located in a recipe</li>
+<li>An automatic attribute identified by Ohai at the start of the chef-client run</li>
+</ol>
+
+
+<p>You can more directly influence precedence by taking advantage of attribute types when getting and setting. The types available are (in order of precedence, lowest to highest):</p>
+
+<ul>
+<li><code>default</code> &ndash; lowest precedence, should be used in cookbooks when possible</li>
+<li><code>force_default</code> &ndash; force attribute in cookbook to take over default set in an environment  or role</li>
+<li><code>normal</code> &ndash; not reset during chef-client run and has higher precedence than default</li>
+<li><code>override</code> &ndash; reset at start of each client run</li>
+<li><code>force_override</code> &ndash; ensure override in cookbook takes over for an override attribute in a role or environment</li>
+<li><code>automatic</code> &ndash; discovered by <code>ohai</code> and has highest precedence</li>
+</ul>
+
+
+<p>To store attributes in a cookbook, we can place them in <code>attributes/default.rb</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'># node object is implicit so we can actually do either of the following:
+</span><span class='line'>node.default[:apache][:dir]          = &quot;/etc/apache2&quot;
+</span><span class='line'>node.default[:apache][:listen_ports] = [ &quot;80&quot;,&quot;443&quot; ]
+</span><span class='line'>
+</span><span class='line'># OR
+</span><span class='line'>default[:apache][:dir]          = &quot;/etc/apache2&quot;
+</span><span class='line'>default[:apache][:listen_ports] = [ &quot;80&quot;,&quot;443&quot; ]
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Roles</h1>
+
+<p>A good way to bridge together cookbooks and attributes for re-use. To start a role, start by creating an <code>.rb</code> file in your <code>roles/</code> folder in the chef repository. Here is an example of the three required attributes:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># roles/webserver.rb</span>
+</span><span class='line'><span class="nb">name</span> <span class="s2">&quot;webserver&quot;</span>
+</span><span class='line'><span class="n">description</span> <span class="s2">&quot;The base role for systems that serve HTTP traffic&quot;</span>
+</span><span class='line'><span class="n">run_list</span> <span class="s2">&quot;recipe[apache2]&quot;</span><span class="p">,</span> <span class="s2">&quot;recipe[apache2::mod_ssl]&quot;</span><span class="p">,</span> <span class="s2">&quot;role[monitor]&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Common role tasks in knife:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># Upload a role</span>
+</span><span class='line'>knife role from file webserver.rb
+</span><span class='line'>
+</span><span class='line'><span class="c"># Show roles</span>
+</span><span class='line'>knife role list
+</span><span class='line'>
+</span><span class='line'><span class="c"># Show details on a specific role</span>
+</span><span class='line'>knife role show webserver
+</span><span class='line'>
+</span><span class='line'><span class="c"># Delete a role</span>
+</span><span class='line'>knife role delete webserver
+</span><span class='line'>
+</span><span class='line'><span class="c"># Add a role to a node</span>
+</span><span class='line'>knife node run_list add chefclient <span class="s1">&#39;role[webserver]&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Environments</h1>
+
+<p>A way to logically break up workflow and reflect organizational patterns.
+Every node can be assigned to a single environment. By default, all nodes
+are part of the <code>_default</code> environment. You can create a new environment by creating a *.rb file in the <code>environments</code> folder of the chef-repo. This process is very similar to creating a new role. Your environment file needs
+a <code>name</code>, <code>cookbook</code>, <code>description</code> (<code>default_attributes</code> and <code>override_attributes</code> are optional):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># environments/dev.rb</span>
+</span><span class='line'><span class="nb">name</span> <span class="s2">&quot;dev&quot;</span>
+</span><span class='line'><span class="n">description</span> <span class="s2">&quot;The development environment&quot;</span>
+</span><span class='line'><span class="n">cookbook_versions</span>  <span class="s2">&quot;couchdb&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;= 11.0.0&quot;</span>
+</span><span class='line'><span class="n">default_attributes</span> <span class="s2">&quot;apache2&quot;</span> <span class="o">=&gt;</span> <span class="p">{</span> <span class="s2">&quot;listen_ports&quot;</span> <span class="o">=&gt;</span> <span class="o">[</span> <span class="s2">&quot;80&quot;</span><span class="p">,</span> <span class="s2">&quot;443&quot;</span> <span class="o">]</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here are some environment management commands from knife:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># Create environment from dev.rb file</span>
+</span><span class='line'>knife environment create from file dev.rb
+</span><span class='line'>
+</span><span class='line'><span class="c"># Show available environments</span>
+</span><span class='line'>knife environment list
+</span><span class='line'>
+</span><span class='line'><span class="c"># Show environment assignment for a node</span>
+</span><span class='line'>knife node show <span class="nv">$nodename</span> | grep ^Env
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It appears you&rsquo;ll have to use a plugin to knife to modify environments but otherwise it is a very trivial task to perform from the chef server web interface.</p>
+
+<h1>Community Cookbooks</h1>
+
+<p>There is a great online resource for interacting with cookbooks from others online at <a href="http://community.opscode.com/cookbooks">http://community.opscode.com/cookbooks</a>. Once you find a good looking cookbook you&rsquo;d like to pull into your own environment (after proper vetting of course), you can use knife to assist here:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># search the community site</span>
+</span><span class='line'>knife cookbook site search chef-client
+</span><span class='line'>
+</span><span class='line'><span class="c"># show detail about a particular package</span>
+</span><span class='line'>knife cookbook site show chef-client
+</span><span class='line'>
+</span><span class='line'><span class="c"># download community cookbook into local tar file</span>
+</span><span class='line'>knife cookbook site download chef-client
+</span><span class='line'>
+</span><span class='line'><span class="c"># Install cookbook into cookbooks directory and commit changes</span>
+</span><span class='line'>knife cookbook site install chef-client
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From what I can tell, using the <code>site install</code> command is against chef best practices. You really should be vetting third-party code before pulling it down and committing it to your environment. There is a great community of chef tools and knife plugins out there. The Opscode folks have singled out some of the most common in the <a href="http://www.getchef.com/downloads/chef-dk/">Chef Development Kit</a>.</p>
+
+<p>Okay! Great notes everyone!</p>
+
+<h1>Reference</h1>
+
+<ul>
+<li><a href="http://youtu.be/H3Ggublb378">Fundamentals Webinar &ndash; Module 4</a></li>
+<li><a href="http://youtu.be/46NQNzkCe_U">Fundamentals Webinar &ndash; Module 5</a></li>
+<li><a href="http://docs.opscode.com/essentials_nodes_chef_run.html">Chef Run</a></li>
+<li><a href="http://docs.opscode.com/auth.html">Authentication and Authorization</a></li>
+<li><a href="http://docs.opscode.com/essentials_search.html">Searching</a></li>
+<li><a href="http://docs.opscode.com/essentials_cookbook_recipes.html">Recipe Docs</a></li>
+<li><a href="http://docs.opscode.com/chef_overview_attributes.html">Attributes</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mike Sheinberg</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-19T18:19:18-04:00" pubdate data-updated="true">May 19<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://msheiny.github.io/blog/2014/05/19/okay-more-chef-notes/" data-via="" data-counturl="http://msheiny.github.io/blog/2014/05/19/okay-more-chef-notes/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/05/05/jenkins-primer/" title="Previous Post: Jenkins Primer">&laquo; Jenkins Primer</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/19/okay-more-chef-notes/">Chef Recipes Expanded</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/05/jenkins-primer/">Jenkins Primer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/chef-getting-started-with-recipes/">Chef - Getting Started With Recipes</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/a-chef-primer/">A Chef Primer</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/17/mikrotik-and-me/">Mikrotik and Me</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/msheiny">@msheiny</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'msheiny',
+            count: 0,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Mike Sheinberg -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
